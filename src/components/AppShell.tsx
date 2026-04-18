@@ -155,13 +155,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Settings className="h-[18px] w-[18px]" />
             </button>
             <div className="ml-2 hidden text-right md:block">
-              <p className="text-sm font-semibold text-on-surface">Dr. Aris Thorne</p>
+              <p className="text-sm font-semibold text-on-surface">{displayName}</p>
               <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
-                Curador Principal
+                {role}
               </p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary font-display text-sm font-bold text-on-primary">
-              AT
+              {initials}
             </div>
           </div>
         </header>
