@@ -17,7 +17,7 @@ import { Route as AgendamentosRouteImport } from './routes/agendamentos'
 import { Route as AdministracaoRouteImport } from './routes/administracao'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PedidosNovoRouteImport } from './routes/pedidos.novo'
-import { Route as AgendamentosReservarRouteImport } from './routes/agendamentos.reservar'
+import { Route as AgendamentosReservarRouteImport } from './routes/agendamentos_.reservar'
 
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
@@ -60,15 +60,15 @@ const PedidosNovoRoute = PedidosNovoRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgendamentosReservarRoute = AgendamentosReservarRouteImport.update({
-  id: '/reservar',
-  path: '/reservar',
-  getParentRoute: () => AgendamentosRoute,
+  id: '/agendamentos_/reservar',
+  path: '/agendamentos/reservar',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/administracao': typeof AdministracaoRoute
-  '/agendamentos': typeof AgendamentosRouteWithChildren
+  '/agendamentos': typeof AgendamentosRoute
   '/analises': typeof AnalisesRoute
   '/dashboard': typeof DashboardRoute
   '/datasets': typeof DatasetsRoute
@@ -79,7 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/administracao': typeof AdministracaoRoute
-  '/agendamentos': typeof AgendamentosRouteWithChildren
+  '/agendamentos': typeof AgendamentosRoute
   '/analises': typeof AnalisesRoute
   '/dashboard': typeof DashboardRoute
   '/datasets': typeof DatasetsRoute
@@ -91,12 +91,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/administracao': typeof AdministracaoRoute
-  '/agendamentos': typeof AgendamentosRouteWithChildren
+  '/agendamentos': typeof AgendamentosRoute
   '/analises': typeof AnalisesRoute
   '/dashboard': typeof DashboardRoute
   '/datasets': typeof DatasetsRoute
   '/home': typeof HomeRoute
-  '/agendamentos/reservar': typeof AgendamentosReservarRoute
+  '/agendamentos_/reservar': typeof AgendamentosReservarRoute
   '/pedidos/novo': typeof PedidosNovoRoute
 }
 export interface FileRouteTypes {
@@ -131,18 +131,19 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/datasets'
     | '/home'
-    | '/agendamentos/reservar'
+    | '/agendamentos_/reservar'
     | '/pedidos/novo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdministracaoRoute: typeof AdministracaoRoute
-  AgendamentosRoute: typeof AgendamentosRouteWithChildren
+  AgendamentosRoute: typeof AgendamentosRoute
   AnalisesRoute: typeof AnalisesRoute
   DashboardRoute: typeof DashboardRoute
   DatasetsRoute: typeof DatasetsRoute
   HomeRoute: typeof HomeRoute
+  AgendamentosReservarRoute: typeof AgendamentosReservarRoute
   PedidosNovoRoute: typeof PedidosNovoRoute
 }
 
@@ -204,38 +205,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PedidosNovoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agendamentos/reservar': {
-      id: '/agendamentos/reservar'
-      path: '/reservar'
+    '/agendamentos_/reservar': {
+      id: '/agendamentos_/reservar'
+      path: '/agendamentos/reservar'
       fullPath: '/agendamentos/reservar'
       preLoaderRoute: typeof AgendamentosReservarRouteImport
-      parentRoute: typeof AgendamentosRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AgendamentosRouteChildren {
-  AgendamentosReservarRoute: typeof AgendamentosReservarRoute
-}
-
-const AgendamentosRouteChildren: AgendamentosRouteChildren = {
-  AgendamentosReservarRoute: AgendamentosReservarRoute,
-}
-
-const AgendamentosRouteWithChildren = AgendamentosRoute._addFileChildren(
-  AgendamentosRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdministracaoRoute: AdministracaoRoute,
-  AgendamentosRoute: AgendamentosRouteWithChildren,
+  AgendamentosRoute: AgendamentosRoute,
   AnalisesRoute: AnalisesRoute,
   DashboardRoute: DashboardRoute,
   DatasetsRoute: DatasetsRoute,
   HomeRoute: HomeRoute,
+  AgendamentosReservarRoute: AgendamentosReservarRoute,
   PedidosNovoRoute: PedidosNovoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
