@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mail, Lock, ArrowRight, ShieldCheck, Database, BarChart3, GraduationCap } from "lucide-react";
+import logoUrl from "@/assets/dgeec-logo.png";
 
 export const Route = createFileRoute("/")({
   component: LoginPage,
