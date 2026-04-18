@@ -10,43 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HomeRouteImport } from './routes/home'
-import { Route as DatasetsRouteImport } from './routes/datasets'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AnalisesRouteImport } from './routes/analises'
-import { Route as AgendamentosRouteImport } from './routes/agendamentos'
-import { Route as AdministracaoRouteImport } from './routes/administracao'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PedidosNovoRouteImport } from './routes/pedidos.novo'
-import { Route as AgendamentosReservarRouteImport } from './routes/agendamentos_.reservar'
+import { Route as AuthenticatedDatasetsRouteImport } from './routes/_authenticated.datasets'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
+import { Route as AuthenticatedAnalisesRouteImport } from './routes/_authenticated.analises'
+import { Route as AuthenticatedAgendamentosRouteImport } from './routes/_authenticated.agendamentos'
+import { Route as AuthenticatedAdministracaoRouteImport } from './routes/_authenticated.administracao'
+import { Route as AuthenticatedPedidosNovoRouteImport } from './routes/_authenticated.pedidos.novo'
+import { Route as AuthenticatedAgendamentosReservarRouteImport } from './routes/_authenticated.agendamentos_.reservar'
 
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DatasetsRoute = DatasetsRouteImport.update({
-  id: '/datasets',
-  path: '/datasets',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalisesRoute = AnalisesRouteImport.update({
-  id: '/analises',
-  path: '/analises',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgendamentosRoute = AgendamentosRouteImport.update({
-  id: '/agendamentos',
-  path: '/agendamentos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdministracaoRoute = AdministracaoRouteImport.update({
-  id: '/administracao',
-  path: '/administracao',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -54,97 +40,129 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PedidosNovoRoute = PedidosNovoRouteImport.update({
-  id: '/pedidos/novo',
-  path: '/pedidos/novo',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedDatasetsRoute = AuthenticatedDatasetsRouteImport.update({
+  id: '/datasets',
+  path: '/datasets',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AgendamentosReservarRoute = AgendamentosReservarRouteImport.update({
-  id: '/agendamentos_/reservar',
-  path: '/agendamentos/reservar',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAnalisesRoute = AuthenticatedAnalisesRouteImport.update({
+  id: '/analises',
+  path: '/analises',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAgendamentosRoute =
+  AuthenticatedAgendamentosRouteImport.update({
+    id: '/agendamentos',
+    path: '/agendamentos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdministracaoRoute =
+  AuthenticatedAdministracaoRouteImport.update({
+    id: '/administracao',
+    path: '/administracao',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPedidosNovoRoute =
+  AuthenticatedPedidosNovoRouteImport.update({
+    id: '/pedidos/novo',
+    path: '/pedidos/novo',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAgendamentosReservarRoute =
+  AuthenticatedAgendamentosReservarRouteImport.update({
+    id: '/agendamentos_/reservar',
+    path: '/agendamentos/reservar',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/administracao': typeof AdministracaoRoute
-  '/agendamentos': typeof AgendamentosRoute
-  '/analises': typeof AnalisesRoute
-  '/dashboard': typeof DashboardRoute
-  '/datasets': typeof DatasetsRoute
+  '/auth': typeof AuthRoute
   '/home': typeof HomeRoute
-  '/agendamentos/reservar': typeof AgendamentosReservarRoute
-  '/pedidos/novo': typeof PedidosNovoRoute
+  '/administracao': typeof AuthenticatedAdministracaoRoute
+  '/agendamentos': typeof AuthenticatedAgendamentosRoute
+  '/analises': typeof AuthenticatedAnalisesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/datasets': typeof AuthenticatedDatasetsRoute
+  '/agendamentos/reservar': typeof AuthenticatedAgendamentosReservarRoute
+  '/pedidos/novo': typeof AuthenticatedPedidosNovoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/administracao': typeof AdministracaoRoute
-  '/agendamentos': typeof AgendamentosRoute
-  '/analises': typeof AnalisesRoute
-  '/dashboard': typeof DashboardRoute
-  '/datasets': typeof DatasetsRoute
+  '/auth': typeof AuthRoute
   '/home': typeof HomeRoute
-  '/agendamentos/reservar': typeof AgendamentosReservarRoute
-  '/pedidos/novo': typeof PedidosNovoRoute
+  '/administracao': typeof AuthenticatedAdministracaoRoute
+  '/agendamentos': typeof AuthenticatedAgendamentosRoute
+  '/analises': typeof AuthenticatedAnalisesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/datasets': typeof AuthenticatedDatasetsRoute
+  '/agendamentos/reservar': typeof AuthenticatedAgendamentosReservarRoute
+  '/pedidos/novo': typeof AuthenticatedPedidosNovoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/administracao': typeof AdministracaoRoute
-  '/agendamentos': typeof AgendamentosRoute
-  '/analises': typeof AnalisesRoute
-  '/dashboard': typeof DashboardRoute
-  '/datasets': typeof DatasetsRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/auth': typeof AuthRoute
   '/home': typeof HomeRoute
-  '/agendamentos_/reservar': typeof AgendamentosReservarRoute
-  '/pedidos/novo': typeof PedidosNovoRoute
+  '/_authenticated/administracao': typeof AuthenticatedAdministracaoRoute
+  '/_authenticated/agendamentos': typeof AuthenticatedAgendamentosRoute
+  '/_authenticated/analises': typeof AuthenticatedAnalisesRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/datasets': typeof AuthenticatedDatasetsRoute
+  '/_authenticated/agendamentos_/reservar': typeof AuthenticatedAgendamentosReservarRoute
+  '/_authenticated/pedidos/novo': typeof AuthenticatedPedidosNovoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
+    | '/home'
     | '/administracao'
     | '/agendamentos'
     | '/analises'
     | '/dashboard'
     | '/datasets'
-    | '/home'
     | '/agendamentos/reservar'
     | '/pedidos/novo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
+    | '/home'
     | '/administracao'
     | '/agendamentos'
     | '/analises'
     | '/dashboard'
     | '/datasets'
-    | '/home'
     | '/agendamentos/reservar'
     | '/pedidos/novo'
   id:
     | '__root__'
     | '/'
-    | '/administracao'
-    | '/agendamentos'
-    | '/analises'
-    | '/dashboard'
-    | '/datasets'
+    | '/_authenticated'
+    | '/auth'
     | '/home'
-    | '/agendamentos_/reservar'
-    | '/pedidos/novo'
+    | '/_authenticated/administracao'
+    | '/_authenticated/agendamentos'
+    | '/_authenticated/analises'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/datasets'
+    | '/_authenticated/agendamentos_/reservar'
+    | '/_authenticated/pedidos/novo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdministracaoRoute: typeof AdministracaoRoute
-  AgendamentosRoute: typeof AgendamentosRoute
-  AnalisesRoute: typeof AnalisesRoute
-  DashboardRoute: typeof DashboardRoute
-  DatasetsRoute: typeof DatasetsRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthRoute: typeof AuthRoute
   HomeRoute: typeof HomeRoute
-  AgendamentosReservarRoute: typeof AgendamentosReservarRoute
-  PedidosNovoRoute: typeof PedidosNovoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -156,39 +174,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/datasets': {
-      id: '/datasets'
-      path: '/datasets'
-      fullPath: '/datasets'
-      preLoaderRoute: typeof DatasetsRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analises': {
-      id: '/analises'
-      path: '/analises'
-      fullPath: '/analises'
-      preLoaderRoute: typeof AnalisesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agendamentos': {
-      id: '/agendamentos'
-      path: '/agendamentos'
-      fullPath: '/agendamentos'
-      preLoaderRoute: typeof AgendamentosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/administracao': {
-      id: '/administracao'
-      path: '/administracao'
-      fullPath: '/administracao'
-      preLoaderRoute: typeof AdministracaoRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -198,33 +195,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pedidos/novo': {
-      id: '/pedidos/novo'
+    '/_authenticated/datasets': {
+      id: '/_authenticated/datasets'
+      path: '/datasets'
+      fullPath: '/datasets'
+      preLoaderRoute: typeof AuthenticatedDatasetsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analises': {
+      id: '/_authenticated/analises'
+      path: '/analises'
+      fullPath: '/analises'
+      preLoaderRoute: typeof AuthenticatedAnalisesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/agendamentos': {
+      id: '/_authenticated/agendamentos'
+      path: '/agendamentos'
+      fullPath: '/agendamentos'
+      preLoaderRoute: typeof AuthenticatedAgendamentosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/administracao': {
+      id: '/_authenticated/administracao'
+      path: '/administracao'
+      fullPath: '/administracao'
+      preLoaderRoute: typeof AuthenticatedAdministracaoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pedidos/novo': {
+      id: '/_authenticated/pedidos/novo'
       path: '/pedidos/novo'
       fullPath: '/pedidos/novo'
-      preLoaderRoute: typeof PedidosNovoRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedPedidosNovoRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/agendamentos_/reservar': {
-      id: '/agendamentos_/reservar'
+    '/_authenticated/agendamentos_/reservar': {
+      id: '/_authenticated/agendamentos_/reservar'
       path: '/agendamentos/reservar'
       fullPath: '/agendamentos/reservar'
-      preLoaderRoute: typeof AgendamentosReservarRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedAgendamentosReservarRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAdministracaoRoute: typeof AuthenticatedAdministracaoRoute
+  AuthenticatedAgendamentosRoute: typeof AuthenticatedAgendamentosRoute
+  AuthenticatedAnalisesRoute: typeof AuthenticatedAnalisesRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDatasetsRoute: typeof AuthenticatedDatasetsRoute
+  AuthenticatedAgendamentosReservarRoute: typeof AuthenticatedAgendamentosReservarRoute
+  AuthenticatedPedidosNovoRoute: typeof AuthenticatedPedidosNovoRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdministracaoRoute: AuthenticatedAdministracaoRoute,
+  AuthenticatedAgendamentosRoute: AuthenticatedAgendamentosRoute,
+  AuthenticatedAnalisesRoute: AuthenticatedAnalisesRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDatasetsRoute: AuthenticatedDatasetsRoute,
+  AuthenticatedAgendamentosReservarRoute:
+    AuthenticatedAgendamentosReservarRoute,
+  AuthenticatedPedidosNovoRoute: AuthenticatedPedidosNovoRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdministracaoRoute: AdministracaoRoute,
-  AgendamentosRoute: AgendamentosRoute,
-  AnalisesRoute: AnalisesRoute,
-  DashboardRoute: DashboardRoute,
-  DatasetsRoute: DatasetsRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthRoute: AuthRoute,
   HomeRoute: HomeRoute,
-  AgendamentosReservarRoute: AgendamentosReservarRoute,
-  PedidosNovoRoute: PedidosNovoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
