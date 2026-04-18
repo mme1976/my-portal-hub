@@ -3,7 +3,7 @@ import { Database, Download, FileText } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
 
-export const Route = createFileRoute("/datasets")({
+export const Route = createFileRoute("/_authenticated/datasets")({
   component: DatasetsPage,
   head: () => ({ meta: [{ title: "Datasets · DGEEC SafeCenter" }] }),
 });

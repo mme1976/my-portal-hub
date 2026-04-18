@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -13,6 +13,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useAuth } from "@/lib/auth/auth-context";
 import logoUrl from "@/assets/dgeec-logo.png";
 
 const nav = [
@@ -32,9 +33,25 @@ const topTabs = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname;
+  const { profile, user, signOut, hasRole } = useAuth();
 
   const activeTab = topTabs.find((t) => t.paths.some((p) => path.startsWith(p)))?.id ?? "painel";
+
+  const displayName = profile?.full_name?.trim() || user?.email?.split("@")[0] || "Investigador";
+  const role = hasRole("admin") ? "Administrador" : profile?.position || "Investigador";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("") || "??";
+
+  const handleSignOut = async () => {
+    await signOut();
+    void navigate({ to: "/auth" });
+  };
 
   return (
     <div className="min-h-screen bg-background text-on-surface">
@@ -90,13 +107,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <HelpCircle className="h-[18px] w-[18px]" />
             <span>Suporte</span>
           </Link>
-          <Link
-            to="/"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-on-surface-variant transition-colors hover:bg-surface-container-highest"
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-on-surface-variant transition-colors hover:bg-surface-container-highest text-left"
           >
             <LogOut className="h-[18px] w-[18px]" />
             <span>Sair</span>
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -137,13 +155,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Settings className="h-[18px] w-[18px]" />
             </button>
             <div className="ml-2 hidden text-right md:block">
-              <p className="text-sm font-semibold text-on-surface">Dr. Aris Thorne</p>
+              <p className="text-sm font-semibold text-on-surface">{displayName}</p>
               <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
-                Curador Principal
+                {role}
               </p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary font-display text-sm font-bold text-on-primary">
-              AT
+              {initials}
             </div>
           </div>
         </header>

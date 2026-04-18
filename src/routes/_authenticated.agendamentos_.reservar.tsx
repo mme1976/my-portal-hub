@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Cpu, Microscope, Lock, Check, Atom, Terminal, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 
-export const Route = createFileRoute("/agendamentos_/reservar")({
+export const Route = createFileRoute("/_authenticated/agendamentos_/reservar")({
   component: ReservarPage,
   head: () => ({ meta: [{ title: "Reservar Posto · DGEEC SafeCenter" }] }),
 });

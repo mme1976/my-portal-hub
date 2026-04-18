@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldCheck, Upload, ArrowLeft, ListChecks, HelpCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 
-export const Route = createFileRoute("/pedidos/novo")({
+export const Route = createFileRoute("/_authenticated/pedidos/novo")({
   component: NovoPedido,
   head: () => ({ meta: [{ title: "Novo Pedido · DGEEC SafeCenter" }] }),
 });
