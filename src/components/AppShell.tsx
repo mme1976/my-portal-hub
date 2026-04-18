@@ -13,6 +13,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import logoUrl from "@/assets/dgeec-logo.png";
 
 const nav = [
   { to: "/dashboard", label: "Visão Geral", icon: LayoutDashboard },
@@ -23,17 +24,30 @@ const nav = [
   { to: "/administracao", label: "Administração", icon: ShieldCheck },
 ] as const;
 
+const topTabs = [
+  { id: "painel", label: "Painel", paths: ["/dashboard", "/agendamentos", "/pedidos"] },
+  { id: "investigacao", label: "Investigação", paths: ["/datasets", "/analises"] },
+  { id: "arquivo", label: "Arquivo", paths: ["/administracao"] },
+] as const;
+
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const path = location.pathname;
+
+  const activeTab = topTabs.find((t) => t.paths.some((p) => path.startsWith(p)))?.id ?? "painel";
 
   return (
     <div className="min-h-screen bg-background text-on-surface">
       <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 flex-col bg-surface-container-low px-4 py-6 lg:flex">
         <Link to="/dashboard" className="mb-10 flex items-center gap-3 px-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary text-on-primary shadow-tonal">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
+          <img
+            src={logoUrl}
+            alt="DGEEC SafeCenter"
+            width={1024}
+            height={1024}
+            loading="lazy"
+            className="h-12 w-12 flex-none rounded-full shadow-tonal-sm"
+          />
           <div>
             <p className="font-display text-base font-extrabold leading-none text-on-surface">
               DGEEC
@@ -87,8 +101,27 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex items-center gap-4 bg-background/80 px-6 py-4 backdrop-blur-md md:px-12">
-          <div className="relative flex-1 max-w-md">
+        <header className="sticky top-0 z-30 flex flex-wrap items-center gap-x-6 gap-y-3 bg-background/80 px-6 py-4 backdrop-blur-md md:px-12">
+          {/* Top tabs */}
+          <nav className="order-1 flex items-center gap-1 text-sm md:order-none" aria-label="Secções principais">
+            {topTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <span
+                  key={tab.id}
+                  className={
+                    isActive
+                      ? "relative px-3 py-2 font-semibold text-primary after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:rounded-full after:bg-primary"
+                      : "px-3 py-2 font-medium text-on-surface-variant transition-colors hover:text-on-surface"
+                  }
+                >
+                  {tab.label}
+                </span>
+              );
+            })}
+          </nav>
+
+          <div className="order-3 relative flex-1 md:order-none md:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
             <input
               type="search"
@@ -96,7 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="w-full rounded-lg bg-surface-container-highest py-2.5 pl-10 pr-4 text-sm text-on-surface outline outline-2 outline-transparent transition-colors placeholder:text-on-surface-variant/70 focus:outline-primary"
             />
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="order-2 ml-auto flex items-center gap-2 md:order-none">
             <button className="flex h-10 w-10 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-highest">
               <Bell className="h-[18px] w-[18px]" />
             </button>
