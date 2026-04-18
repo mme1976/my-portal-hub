@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldCheck, ArrowRight, Lock, Database, Cpu, Microscope, Wrench } from "lucide-react";
+import logoUrl from "@/assets/dgeec-logo.png";
 
 export const Route = createFileRoute("/home")({
   component: HomePage,
@@ -11,9 +12,13 @@ function HomePage() {
       {/* Top header */}
       <header className="mx-auto flex max-w-7xl items-center gap-8 px-6 py-6 md:px-12">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary text-on-primary shadow-tonal">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
+          <img
+            src={logoUrl}
+            alt="DGEEC SafeCenter"
+            width={1024}
+            height={1024}
+            className="h-11 w-11 flex-none rounded-full shadow-tonal-sm"
+          />
           <div>
             <p className="font-display text-sm font-extrabold leading-none">DGEEC</p>
             <p className="font-display text-sm font-extrabold leading-tight">SafeCenter</p>

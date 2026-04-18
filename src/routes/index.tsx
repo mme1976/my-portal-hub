@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mail, Lock, ArrowRight, ShieldCheck, Database, BarChart3, GraduationCap } from "lucide-react";
+import logoUrl from "@/assets/dgeec-logo.png";
 
 export const Route = createFileRoute("/")({
   component: LoginPage,
@@ -15,9 +16,13 @@ function LoginPage() {
           <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
           <div className="relative">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
+              <img
+                src={logoUrl}
+                alt="DGEEC SafeCenter"
+                width={1024}
+                height={1024}
+                className="h-14 w-14 flex-none rounded-full bg-white/10 p-0.5 shadow-tonal-sm backdrop-blur"
+              />
               <span className="font-display text-sm font-semibold uppercase tracking-[0.12em] opacity-80">
                 DGEEC
               </span>
