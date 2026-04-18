@@ -3,7 +3,7 @@ import { Plus, Filter, Search, Eye, Download, Pencil, Clock, FolderCog, BarChart
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
   head: () => ({ meta: [{ title: "Painel · DGEEC SafeCenter" }] }),
 });

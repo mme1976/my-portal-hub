@@ -3,7 +3,7 @@ import { Calendar, Filter, Search, Microscope, Cpu, Rocket, Radio, ChevronLeft, 
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
 
-export const Route = createFileRoute("/agendamentos")({
+export const Route = createFileRoute("/_authenticated/agendamentos")({
   component: AgendamentosPage,
   head: () => ({ meta: [{ title: "Agendamentos · DGEEC SafeCenter" }] }),
 });

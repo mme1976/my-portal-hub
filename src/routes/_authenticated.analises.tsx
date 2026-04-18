@@ -3,7 +3,7 @@ import { Clock, Database, Zap, Terminal, Filter, Search } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
 
-export const Route = createFileRoute("/analises")({
+export const Route = createFileRoute("/_authenticated/analises")({
   component: AnalisesPage,
   head: () => ({ meta: [{ title: "Análises · DGEEC SafeCenter" }] }),
 });

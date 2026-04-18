@@ -18,7 +18,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
 
-export const Route = createFileRoute("/administracao")({
+export const Route = createFileRoute("/_authenticated/administracao")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Administração · DGEEC SafeCenter" }] }),
 });
