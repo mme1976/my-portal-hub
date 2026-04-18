@@ -234,6 +234,17 @@ function VisaoGeral() {
   );
 }
 
+type Protocolo = {
+  id: string;
+  area: string;
+  titulo: string;
+  investigador: string;
+  instituicao: string;
+  state: string;
+  tone: "success" | "warning" | "neutral" | "secondary" | "error";
+  ref: string;
+};
+
 function ProtocolosTab({
   tema,
   setTema,
@@ -241,16 +252,7 @@ function ProtocolosTab({
 }: {
   tema: string;
   setTema: (t: string) => void;
-  protocolos: typeof import("./administracao")._protocolos extends never ? typeof import("./administracao")._protocolos : Array<{
-    id: string;
-    area: string;
-    titulo: string;
-    investigador: string;
-    instituicao: string;
-    state: string;
-    tone: "success" | "warning" | "neutral" | "secondary" | "error";
-    ref: string;
-  }>;
+  protocolos: Protocolo[];
 }) {
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
