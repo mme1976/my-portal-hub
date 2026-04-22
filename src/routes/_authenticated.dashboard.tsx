@@ -67,12 +67,40 @@ function Dashboard() {
     void loadReservas();
   };
 
-  // KPIs derived from reservas
-  const totalHoras = reservas.reduce((acc, r) => {
-    const start = Number(r.start_time.slice(0, 2)) + Number(r.start_time.slice(3, 5)) / 60;
-    const end = Number(r.end_time.slice(0, 2)) + Number(r.end_time.slice(3, 5)) / 60;
-    return acc + (end - start);
-  }, 0);
+  // Categorize by time vs today
+  const today = format(new Date(), "yyyy-MM-dd");
+  const buckets = useMemo(() => {
+    const atuais: ReservaRow[] = [];
+    const futuras: ReservaRow[] = [];
+    const passadas: ReservaRow[] = [];
+    reservas.forEach((r) => {
+      if (r.reserva_date < today) passadas.push(r);
+      else if (r.reserva_date === today) atuais.push(r);
+      else futuras.push(r);
+    });
+    return { atuais, futuras, passadas };
+  }, [reservas, today]);
+
+  const tabReservas = buckets[tab];
+  const filtered = useMemo(() => {
+    const list = statusFilter === "todas" ? tabReservas : tabReservas.filter((r) => r.status === statusFilter);
+    // Sort upcoming ascending, past descending
+    const asc = tab !== "passadas";
+    return [...list].sort((a, b) => {
+      const cmp = a.reserva_date.localeCompare(b.reserva_date) || a.start_time.localeCompare(b.start_time);
+      return asc ? cmp : -cmp;
+    });
+  }, [tabReservas, statusFilter, tab]);
+
+  // KPI: only confirmed reservations from today onwards
+  const totalHoras = [...buckets.atuais, ...buckets.futuras]
+    .filter((r) => r.status !== "cancelada")
+    .reduce((acc, r) => {
+      const start = Number(r.start_time.slice(0, 2)) + Number(r.start_time.slice(3, 5)) / 60;
+      const end = Number(r.end_time.slice(0, 2)) + Number(r.end_time.slice(3, 5)) / 60;
+      return acc + (end - start);
+    }, 0);
+  const reservasAtivas = [...buckets.atuais, ...buckets.futuras].filter((r) => r.status !== "cancelada").length;
 
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Investigador";
 
