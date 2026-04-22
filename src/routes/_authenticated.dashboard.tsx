@@ -226,29 +226,57 @@ function Dashboard() {
             })}
           </div>
 
-          {/* Filtro por estado */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="label-eyebrow mr-1">Estado</span>
-            {([
-              { id: "todas", label: "Todas" },
-              { id: "confirmada", label: "Confirmadas" },
-              { id: "cancelada", label: "Canceladas" },
-            ] as const).map((f) => {
-              const active = statusFilter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => setStatusFilter(f.id)}
-                  className={
-                    active
-                      ? "rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
-                      : "rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
-                  }
-                >
-                  {f.label}
-                </button>
-              );
-            })}
+          {/* Filtro por estado + ordenação */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="label-eyebrow mr-1">Estado</span>
+              {([
+                { id: "todas", label: "Todas" },
+                { id: "confirmada", label: "Confirmadas" },
+                { id: "cancelada", label: "Canceladas" },
+              ] as const).map((f) => {
+                const active = statusFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setStatusFilter(f.id)}
+                    className={
+                      active
+                        ? "rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
+                        : "rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
+                    }
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="label-eyebrow mr-1">Ordenar</span>
+              {([
+                { id: "proximas", label: "Mais próximas", Icon: ArrowUpWideNarrow },
+                { id: "recentes", label: "Mais recentes", Icon: ArrowDownWideNarrow },
+              ] as const).map((s) => {
+                const active = sortOrder === s.id;
+                const Icon = s.Icon;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setSortOrder(s.id)}
+                    title={s.id === "proximas" ? "Datas mais próximas no topo" : "Datas mais recentes no topo"}
+                    className={
+                      active
+                        ? "inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
+                        : "inline-flex items-center gap-1.5 rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
+                    }
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="mt-6 overflow-hidden rounded-2xl">
