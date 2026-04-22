@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X } from "lucide-react";
+import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X, Search } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ function Dashboard() {
   type StatusFilter = "todas" | "confirmada" | "cancelada";
   const [tab, setTab] = useState<TabKey>("atuais");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todas");
+  const [search, setSearch] = useState("");
 
   const loadReservas = async () => {
     if (!user) return;
@@ -67,19 +68,30 @@ function Dashboard() {
     void loadReservas();
   };
 
+  // Apply text search across name + code first
+  const searched = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return reservas;
+    return reservas.filter((r) => {
+      const name = r.posto?.name?.toLowerCase() ?? "";
+      const code = r.posto?.code?.toLowerCase() ?? "";
+      return name.includes(q) || code.includes(q);
+    });
+  }, [reservas, search]);
+
   // Categorize by time vs today
   const today = format(new Date(), "yyyy-MM-dd");
   const buckets = useMemo(() => {
     const atuais: ReservaRow[] = [];
     const futuras: ReservaRow[] = [];
     const passadas: ReservaRow[] = [];
-    reservas.forEach((r) => {
+    searched.forEach((r) => {
       if (r.reserva_date < today) passadas.push(r);
       else if (r.reserva_date === today) atuais.push(r);
       else futuras.push(r);
     });
     return { atuais, futuras, passadas };
-  }, [reservas, today]);
+  }, [searched, today]);
 
   const tabReservas = buckets[tab];
   const filtered = useMemo(() => {
@@ -158,6 +170,27 @@ function Dashboard() {
             </Link>
           </header>
 
+          {/* Pesquisa por posto */}
+          <div className="mt-5 relative max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Pesquisar por nome ou código do posto…"
+              className="w-full rounded-full border border-outline-variant/40 bg-surface-container-lowest py-2.5 pl-9 pr-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                title="Limpar pesquisa"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Tabs por momento */}
           <div className="mt-6 flex flex-wrap items-center gap-2 border-b border-outline-variant/15">
             {([
@@ -229,7 +262,9 @@ function Dashboard() {
             ) : filtered.length === 0 ? (
               <div className="px-5 py-12 text-center">
                 <p className="text-sm text-on-surface-variant">
-                  {tab === "passadas"
+                  {search.trim()
+                    ? `Nenhuma reserva corresponde a “${search.trim()}” neste separador.`
+                    : tab === "passadas"
                     ? "Sem reservas neste período."
                     : statusFilter !== "todas"
                     ? `Sem reservas ${statusFilter === "cancelada" ? "canceladas" : "confirmadas"} neste separador.`
