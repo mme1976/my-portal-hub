@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Plus, Filter, Search, Eye, Clock, FolderCog, BarChart3, CalendarDays, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -28,18 +28,20 @@ function Dashboard() {
   const [reservas, setReservas] = useState<ReservaRow[]>([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
 
+  type TabKey = "atuais" | "futuras" | "passadas";
+  type StatusFilter = "todas" | "confirmada" | "cancelada";
+  const [tab, setTab] = useState<TabKey>("atuais");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("todas");
+
   const loadReservas = async () => {
     if (!user) return;
-    const today = format(new Date(), "yyyy-MM-dd");
     const { data, error } = await supabase
       .from("reservas")
       .select("id, reserva_date, start_time, end_time, status, posto:postos(code, name)")
       .eq("user_id", user.id)
-      .gte("reserva_date", today)
-      .neq("status", "cancelada")
-      .order("reserva_date", { ascending: true })
-      .order("start_time", { ascending: true })
-      .limit(20);
+      .order("reserva_date", { ascending: false })
+      .order("start_time", { ascending: false })
+      .limit(100);
     if (error) {
       toast.error("Não foi possível carregar reservas");
     } else {
@@ -65,12 +67,40 @@ function Dashboard() {
     void loadReservas();
   };
 
-  // KPIs derived from reservas
-  const totalHoras = reservas.reduce((acc, r) => {
-    const start = Number(r.start_time.slice(0, 2)) + Number(r.start_time.slice(3, 5)) / 60;
-    const end = Number(r.end_time.slice(0, 2)) + Number(r.end_time.slice(3, 5)) / 60;
-    return acc + (end - start);
-  }, 0);
+  // Categorize by time vs today
+  const today = format(new Date(), "yyyy-MM-dd");
+  const buckets = useMemo(() => {
+    const atuais: ReservaRow[] = [];
+    const futuras: ReservaRow[] = [];
+    const passadas: ReservaRow[] = [];
+    reservas.forEach((r) => {
+      if (r.reserva_date < today) passadas.push(r);
+      else if (r.reserva_date === today) atuais.push(r);
+      else futuras.push(r);
+    });
+    return { atuais, futuras, passadas };
+  }, [reservas, today]);
+
+  const tabReservas = buckets[tab];
+  const filtered = useMemo(() => {
+    const list = statusFilter === "todas" ? tabReservas : tabReservas.filter((r) => r.status === statusFilter);
+    // Sort upcoming ascending, past descending
+    const asc = tab !== "passadas";
+    return [...list].sort((a, b) => {
+      const cmp = a.reserva_date.localeCompare(b.reserva_date) || a.start_time.localeCompare(b.start_time);
+      return asc ? cmp : -cmp;
+    });
+  }, [tabReservas, statusFilter, tab]);
+
+  // KPI: only confirmed reservations from today onwards
+  const totalHoras = [...buckets.atuais, ...buckets.futuras]
+    .filter((r) => r.status !== "cancelada")
+    .reduce((acc, r) => {
+      const start = Number(r.start_time.slice(0, 2)) + Number(r.start_time.slice(3, 5)) / 60;
+      const end = Number(r.end_time.slice(0, 2)) + Number(r.end_time.slice(3, 5)) / 60;
+      return acc + (end - start);
+    }, 0);
+  const reservasAtivas = [...buckets.atuais, ...buckets.futuras].filter((r) => r.status !== "cancelada").length;
 
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Investigador";
 
@@ -108,7 +138,7 @@ function Dashboard() {
             icon={Clock}
             label="Horas Reservadas"
             value={`${totalHoras.toFixed(1)}h`}
-            chip={`${reservas.length} reserva(s)`}
+            chip={`${reservasAtivas} ativa(s)`}
             tone="primary"
           />
           <KPI icon={FolderCog} label="Datasets Ativos" value="08" tone="tertiary" />
@@ -119,19 +149,72 @@ function Dashboard() {
           </KPI>
         </div>
 
-        {/* Próximas Reservas */}
+        {/* Reservas com tabs + filtro */}
         <section className="mt-10 rounded-3xl bg-surface-container-low p-8">
-          <header className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold text-on-surface">
-              Próximas Reservas de Postos
-            </h2>
-            <Link
-              to="/agendamentos"
-              className="text-xs font-semibold text-primary hover:underline"
-            >
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <h2 className="font-display text-xl font-bold text-on-surface">As Minhas Reservas</h2>
+            <Link to="/agendamentos" className="text-xs font-semibold text-primary hover:underline">
               Ver agendamentos →
             </Link>
           </header>
+
+          {/* Tabs por momento */}
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-b border-outline-variant/15">
+            {([
+              { id: "atuais", label: "Hoje", count: buckets.atuais.length },
+              { id: "futuras", label: "Futuras", count: buckets.futuras.length },
+              { id: "passadas", label: "Passadas", count: buckets.passadas.length },
+            ] as const).map((t) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={
+                    active
+                      ? "relative -mb-px inline-flex items-center gap-2 border-b-2 border-primary px-4 py-3 text-sm font-semibold text-primary"
+                      : "relative -mb-px inline-flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface"
+                  }
+                >
+                  {t.label}
+                  <span
+                    className={
+                      active
+                        ? "rounded-full bg-primary/15 px-2 py-0.5 text-[0.6875rem] font-bold text-primary"
+                        : "rounded-full bg-surface-container-highest px-2 py-0.5 text-[0.6875rem] font-bold text-on-surface-variant"
+                    }
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Filtro por estado */}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <span className="label-eyebrow mr-1">Estado</span>
+            {([
+              { id: "todas", label: "Todas" },
+              { id: "confirmada", label: "Confirmadas" },
+              { id: "cancelada", label: "Canceladas" },
+            ] as const).map((f) => {
+              const active = statusFilter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setStatusFilter(f.id)}
+                  className={
+                    active
+                      ? "rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
+                      : "rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
+                  }
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
 
           <div className="mt-6 overflow-hidden rounded-2xl">
             <div className="grid grid-cols-12 bg-surface-container px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
@@ -143,53 +226,83 @@ function Dashboard() {
             </div>
             {loadingReservas ? (
               <p className="px-5 py-10 text-center text-sm text-on-surface-variant">A carregar…</p>
-            ) : reservas.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <div className="px-5 py-12 text-center">
-                <p className="text-sm text-on-surface-variant">Sem reservas futuras.</p>
-                <Link
-                  to="/agendamentos/reservar"
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-xs font-semibold text-on-primary shadow-tonal"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Criar primeira reserva
-                </Link>
+                <p className="text-sm text-on-surface-variant">
+                  {tab === "passadas"
+                    ? "Sem reservas neste período."
+                    : statusFilter !== "todas"
+                    ? `Sem reservas ${statusFilter === "cancelada" ? "canceladas" : "confirmadas"} neste separador.`
+                    : "Sem reservas neste período."}
+                </p>
+                {tab !== "passadas" && (
+                  <Link
+                    to="/agendamentos/reservar"
+                    className="mt-4 inline-flex items-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-xs font-semibold text-on-primary shadow-tonal"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Reservar posto
+                  </Link>
+                )}
               </div>
             ) : (
               <ul>
-                {reservas.map((r) => (
-                  <li
-                    key={r.id}
-                    className="grid grid-cols-12 items-center gap-3 px-5 py-5 text-sm transition-colors hover:bg-surface-container-high"
-                  >
-                    <div className="col-span-3">
-                      <p className="font-semibold text-on-surface">
-                        {r.posto?.name ?? "Posto"}
-                      </p>
-                      <p className="font-mono text-xs text-on-surface-variant">
-                        #{r.posto?.code}
-                      </p>
-                    </div>
-                    <div className="col-span-3 text-on-surface-variant">
-                      {format(parseISO(r.reserva_date), "d 'de' MMM 'de' yyyy", { locale: pt })}
-                    </div>
-                    <div className="col-span-3 num-display font-semibold text-on-surface">
-                      {r.start_time.slice(0, 5)} – {r.end_time.slice(0, 5)}
-                    </div>
-                    <div className="col-span-2">
-                      <StatusChip tone="success" dot>
-                        Confirmada
-                      </StatusChip>
-                    </div>
-                    <div className="col-span-1 flex justify-end">
-                      <button
-                        onClick={() => cancelReserva(r.id)}
-                        title="Cancelar reserva"
-                        className="flex h-9 w-9 items-center justify-center rounded-md bg-error/10 text-error transition-colors hover:bg-error hover:text-on-error"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </li>
-                ))}
+                {filtered.map((r) => {
+                  const cancelled = r.status === "cancelada";
+                  const isPast = r.reserva_date < today;
+                  return (
+                    <li
+                      key={r.id}
+                      className={
+                        cancelled
+                          ? "grid grid-cols-12 items-center gap-3 px-5 py-5 text-sm opacity-60 transition-colors hover:bg-surface-container-high"
+                          : "grid grid-cols-12 items-center gap-3 px-5 py-5 text-sm transition-colors hover:bg-surface-container-high"
+                      }
+                    >
+                      <div className="col-span-3">
+                        <p
+                          className={
+                            cancelled
+                              ? "font-semibold text-on-surface line-through"
+                              : "font-semibold text-on-surface"
+                          }
+                        >
+                          {r.posto?.name ?? "Posto"}
+                        </p>
+                        <p className="font-mono text-xs text-on-surface-variant">#{r.posto?.code}</p>
+                      </div>
+                      <div className="col-span-3 text-on-surface-variant">
+                        {format(parseISO(r.reserva_date), "d 'de' MMM 'de' yyyy", { locale: pt })}
+                      </div>
+                      <div className="col-span-3 num-display font-semibold text-on-surface">
+                        {r.start_time.slice(0, 5)} – {r.end_time.slice(0, 5)}
+                      </div>
+                      <div className="col-span-2">
+                        {cancelled ? (
+                          <StatusChip tone="error" dot>
+                            Cancelada
+                          </StatusChip>
+                        ) : (
+                          <StatusChip tone="success" dot>
+                            Confirmada
+                          </StatusChip>
+                        )}
+                      </div>
+                      <div className="col-span-1 flex justify-end">
+                        {!cancelled && !isPast ? (
+                          <button
+                            onClick={() => cancelReserva(r.id)}
+                            title="Cancelar reserva"
+                            className="flex h-9 w-9 items-center justify-center rounded-md bg-error/10 text-error transition-colors hover:bg-error hover:text-on-error"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <span className="text-xs text-on-surface-variant/60">—</span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
