@@ -98,13 +98,13 @@ function Dashboard() {
   const tabReservas = buckets[tab];
   const filtered = useMemo(() => {
     const list = statusFilter === "todas" ? tabReservas : tabReservas.filter((r) => r.status === statusFilter);
-    // Sort upcoming ascending, past descending
-    const asc = tab !== "passadas";
+    // proximas = ascending (mais próximas no topo); recentes = descending (mais recentes no topo)
+    const asc = sortOrder === "proximas";
     return [...list].sort((a, b) => {
       const cmp = a.reserva_date.localeCompare(b.reserva_date) || a.start_time.localeCompare(b.start_time);
       return asc ? cmp : -cmp;
     });
-  }, [tabReservas, statusFilter, tab]);
+  }, [tabReservas, statusFilter, sortOrder]);
 
   // KPI: only confirmed reservations from today onwards
   const totalHoras = [...buckets.atuais, ...buckets.futuras]
