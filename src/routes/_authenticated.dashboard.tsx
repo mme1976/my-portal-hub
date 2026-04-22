@@ -262,7 +262,9 @@ function Dashboard() {
             ) : filtered.length === 0 ? (
               <div className="px-5 py-12 text-center">
                 <p className="text-sm text-on-surface-variant">
-                  {tab === "passadas"
+                  {search.trim()
+                    ? `Nenhuma reserva corresponde a “${search.trim()}” neste separador.`
+                    : tab === "passadas"
                     ? "Sem reservas neste período."
                     : statusFilter !== "todas"
                     ? `Sem reservas ${statusFilter === "cancelada" ? "canceladas" : "confirmadas"} neste separador.`
