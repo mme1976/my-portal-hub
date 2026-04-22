@@ -1,44 +1,79 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Filter, Search, Eye, Download, Pencil, Clock, FolderCog, BarChart3 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Filter, Search, Eye, Clock, FolderCog, BarChart3, CalendarDays, X } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { pt } from "date-fns/locale";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
   head: () => ({ meta: [{ title: "Painel · DGEEC SafeCenter" }] }),
 });
 
-const pedidos = [
-  {
-    ref: "#REQ-2024-089",
-    dataset: "Estatísticas do Ensino Superior",
-    sub: "Coorte 2020–2023",
-    data: "12 Mai 2024",
-    state: "Em Preparação",
-    tone: "secondary" as const,
-    icon: Eye,
-  },
-  {
-    ref: "#REQ-2024-072",
-    dataset: "Censos da Habitação — Área Metropolitana",
-    sub: "Microdados Harmonizados",
-    data: "04 Mai 2024",
-    state: "Pronto",
-    tone: "success" as const,
-    icon: Download,
-  },
-  {
-    ref: "#REQ-2024-102",
-    dataset: "Mobilidade Pendular Nacional",
-    sub: "Dados GEO-Ref v2",
-    data: "22 Mai 2024",
-    state: "Pendente",
-    tone: "warning" as const,
-    icon: Pencil,
-  },
-];
+interface ReservaRow {
+  id: string;
+  reserva_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  posto: { code: string; name: string } | null;
+}
 
 function Dashboard() {
+  const { user, profile } = useAuth();
+  const [reservas, setReservas] = useState<ReservaRow[]>([]);
+  const [loadingReservas, setLoadingReservas] = useState(true);
+
+  const loadReservas = async () => {
+    if (!user) return;
+    const today = format(new Date(), "yyyy-MM-dd");
+    const { data, error } = await supabase
+      .from("reservas")
+      .select("id, reserva_date, start_time, end_time, status, posto:postos(code, name)")
+      .eq("user_id", user.id)
+      .gte("reserva_date", today)
+      .neq("status", "cancelada")
+      .order("reserva_date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .limit(20);
+    if (error) {
+      toast.error("Não foi possível carregar reservas");
+    } else {
+      setReservas((data ?? []) as unknown as ReservaRow[]);
+    }
+    setLoadingReservas(false);
+  };
+
+  useEffect(() => {
+    void loadReservas();
+  }, [user?.id]);
+
+  const cancelReserva = async (id: string) => {
+    const { error } = await supabase
+      .from("reservas")
+      .update({ status: "cancelada" })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao cancelar reserva");
+      return;
+    }
+    toast.success("Reserva cancelada");
+    void loadReservas();
+  };
+
+  // KPIs derived from reservas
+  const totalHoras = reservas.reduce((acc, r) => {
+    const start = Number(r.start_time.slice(0, 2)) + Number(r.start_time.slice(3, 5)) / 60;
+    const end = Number(r.end_time.slice(0, 2)) + Number(r.end_time.slice(3, 5)) / 60;
+    return acc + (end - start);
+  }, 0);
+
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "Investigador";
+
   return (
     <AppShell>
       <div className="mx-auto max-w-6xl">
@@ -46,25 +81,34 @@ function Dashboard() {
           <div>
             <p className="label-eyebrow">Dashboard de Investigação</p>
             <h1 className="mt-2 font-display text-4xl font-extrabold text-on-surface">
-              Bem-vindo, Dr. Almeida
+              Bem-vindo, {displayName}
             </h1>
           </div>
-          <Link
-            to="/pedidos/novo"
-            className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-tonal transition-all hover:shadow-tonal-lg"
-          >
-            <Plus className="h-4 w-4" />
-            Novo Pedido de Dataset
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              to="/agendamentos/reservar"
+              className="inline-flex items-center gap-2 rounded-md bg-surface-container-highest px-5 py-3 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
+            >
+              <CalendarDays className="h-4 w-4" />
+              Reservar Posto
+            </Link>
+            <Link
+              to="/pedidos/novo"
+              className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-tonal hover:shadow-tonal-lg"
+            >
+              <Plus className="h-4 w-4" />
+              Novo Pedido
+            </Link>
+          </div>
         </div>
 
         {/* KPIs */}
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           <KPI
             icon={Clock}
-            label="Horas de Utilização"
-            value="142.5h"
-            chip="+12% vs mês anterior"
+            label="Horas Reservadas"
+            value={`${totalHoras.toFixed(1)}h`}
+            chip={`${reservas.length} reserva(s)`}
             tone="primary"
           />
           <KPI icon={FolderCog} label="Datasets Ativos" value="08" tone="tertiary" />
@@ -75,58 +119,79 @@ function Dashboard() {
           </KPI>
         </div>
 
-        {/* Tabela */}
+        {/* Próximas Reservas */}
         <section className="mt-10 rounded-3xl bg-surface-container-low p-8">
           <header className="flex items-center justify-between">
             <h2 className="font-display text-xl font-bold text-on-surface">
-              Estado dos Pedidos de Datasets
+              Próximas Reservas de Postos
             </h2>
-            <div className="flex gap-2">
-              <button className="flex h-9 w-9 items-center justify-center rounded-md text-on-surface-variant transition-colors hover:bg-surface-container-highest">
-                <Filter className="h-4 w-4" />
-              </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-md text-on-surface-variant transition-colors hover:bg-surface-container-highest">
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
+            <Link
+              to="/agendamentos"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Ver agendamentos →
+            </Link>
           </header>
 
           <div className="mt-6 overflow-hidden rounded-2xl">
             <div className="grid grid-cols-12 bg-surface-container px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-              <div className="col-span-3">Referência</div>
-              <div className="col-span-4">Dataset</div>
-              <div className="col-span-2">Data do Pedido</div>
+              <div className="col-span-3">Posto</div>
+              <div className="col-span-3">Data</div>
+              <div className="col-span-3">Horário</div>
               <div className="col-span-2">Estado</div>
               <div className="col-span-1 text-right">Ações</div>
             </div>
-            <ul>
-              {pedidos.map((p) => {
-                const Icon = p.icon;
-                return (
+            {loadingReservas ? (
+              <p className="px-5 py-10 text-center text-sm text-on-surface-variant">A carregar…</p>
+            ) : reservas.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <p className="text-sm text-on-surface-variant">Sem reservas futuras.</p>
+                <Link
+                  to="/agendamentos/reservar"
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-xs font-semibold text-on-primary shadow-tonal"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Criar primeira reserva
+                </Link>
+              </div>
+            ) : (
+              <ul>
+                {reservas.map((r) => (
                   <li
-                    key={p.ref}
+                    key={r.id}
                     className="grid grid-cols-12 items-center gap-3 px-5 py-5 text-sm transition-colors hover:bg-surface-container-high"
                   >
-                    <div className="col-span-3 font-mono text-on-surface-variant">{p.ref}</div>
-                    <div className="col-span-4">
-                      <p className="font-semibold text-on-surface">{p.dataset}</p>
-                      <p className="text-xs text-on-surface-variant">{p.sub}</p>
+                    <div className="col-span-3">
+                      <p className="font-semibold text-on-surface">
+                        {r.posto?.name ?? "Posto"}
+                      </p>
+                      <p className="font-mono text-xs text-on-surface-variant">
+                        #{r.posto?.code}
+                      </p>
                     </div>
-                    <div className="col-span-2 text-on-surface-variant">{p.data}</div>
+                    <div className="col-span-3 text-on-surface-variant">
+                      {format(parseISO(r.reserva_date), "d 'de' MMM 'de' yyyy", { locale: pt })}
+                    </div>
+                    <div className="col-span-3 num-display font-semibold text-on-surface">
+                      {r.start_time.slice(0, 5)} – {r.end_time.slice(0, 5)}
+                    </div>
                     <div className="col-span-2">
-                      <StatusChip tone={p.tone} dot>
-                        {p.state}
+                      <StatusChip tone="success" dot>
+                        Confirmada
                       </StatusChip>
                     </div>
                     <div className="col-span-1 flex justify-end">
-                      <button className="flex h-9 w-9 items-center justify-center rounded-md bg-primary-container text-on-primary-container transition-colors hover:bg-primary hover:text-on-primary">
-                        <Icon className="h-4 w-4" />
+                      <button
+                        onClick={() => cancelReserva(r.id)}
+                        title="Cancelar reserva"
+                        className="flex h-9 w-9 items-center justify-center rounded-md bg-error/10 text-error transition-colors hover:bg-error hover:text-on-error"
+                      >
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   </li>
-                );
-              })}
-            </ul>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
@@ -134,9 +199,7 @@ function Dashboard() {
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[oklch(0.18_0.04_245)] to-[oklch(0.13_0.03_245)] p-8 text-on-primary">
             <p className="label-eyebrow !text-on-primary/70">Recurso Recomendado</p>
-            <h3 className="mt-2 font-display text-2xl font-extrabold">
-              Guia de Segurança de Dados
-            </h3>
+            <h3 className="mt-2 font-display text-2xl font-extrabold">Guia de Segurança de Dados</h3>
             <p className="mt-2 text-sm opacity-80">
               Atualização obrigatória sobre protocolos de anonimização.
             </p>
