@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X, Search } from "lucide-react";
+import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X, Search, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -30,9 +30,11 @@ function Dashboard() {
 
   type TabKey = "atuais" | "futuras" | "passadas";
   type StatusFilter = "todas" | "confirmada" | "cancelada";
+  type SortOrder = "proximas" | "recentes";
   const [tab, setTab] = useState<TabKey>("atuais");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todas");
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("proximas");
 
   const loadReservas = async () => {
     if (!user) return;
@@ -54,6 +56,11 @@ function Dashboard() {
   useEffect(() => {
     void loadReservas();
   }, [user?.id]);
+
+  // Default sort by tab: passadas → mais recentes, restantes → mais próximas
+  useEffect(() => {
+    setSortOrder(tab === "passadas" ? "recentes" : "proximas");
+  }, [tab]);
 
   const cancelReserva = async (id: string) => {
     const { error } = await supabase
@@ -96,13 +103,13 @@ function Dashboard() {
   const tabReservas = buckets[tab];
   const filtered = useMemo(() => {
     const list = statusFilter === "todas" ? tabReservas : tabReservas.filter((r) => r.status === statusFilter);
-    // Sort upcoming ascending, past descending
-    const asc = tab !== "passadas";
+    // proximas = ascending (mais próximas no topo); recentes = descending (mais recentes no topo)
+    const asc = sortOrder === "proximas";
     return [...list].sort((a, b) => {
       const cmp = a.reserva_date.localeCompare(b.reserva_date) || a.start_time.localeCompare(b.start_time);
       return asc ? cmp : -cmp;
     });
-  }, [tabReservas, statusFilter, tab]);
+  }, [tabReservas, statusFilter, sortOrder]);
 
   // KPI: only confirmed reservations from today onwards
   const totalHoras = [...buckets.atuais, ...buckets.futuras]
@@ -224,29 +231,57 @@ function Dashboard() {
             })}
           </div>
 
-          {/* Filtro por estado */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="label-eyebrow mr-1">Estado</span>
-            {([
-              { id: "todas", label: "Todas" },
-              { id: "confirmada", label: "Confirmadas" },
-              { id: "cancelada", label: "Canceladas" },
-            ] as const).map((f) => {
-              const active = statusFilter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => setStatusFilter(f.id)}
-                  className={
-                    active
-                      ? "rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
-                      : "rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
-                  }
-                >
-                  {f.label}
-                </button>
-              );
-            })}
+          {/* Filtro por estado + ordenação */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="label-eyebrow mr-1">Estado</span>
+              {([
+                { id: "todas", label: "Todas" },
+                { id: "confirmada", label: "Confirmadas" },
+                { id: "cancelada", label: "Canceladas" },
+              ] as const).map((f) => {
+                const active = statusFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setStatusFilter(f.id)}
+                    className={
+                      active
+                        ? "rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
+                        : "rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
+                    }
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="label-eyebrow mr-1">Ordenar</span>
+              {([
+                { id: "proximas", label: "Mais próximas", Icon: ArrowUpWideNarrow },
+                { id: "recentes", label: "Mais recentes", Icon: ArrowDownWideNarrow },
+              ] as const).map((s) => {
+                const active = sortOrder === s.id;
+                const Icon = s.Icon;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setSortOrder(s.id)}
+                    title={s.id === "proximas" ? "Datas mais próximas no topo" : "Datas mais recentes no topo"}
+                    className={
+                      active
+                        ? "inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-primary shadow-tonal-sm"
+                        : "inline-flex items-center gap-1.5 rounded-full bg-surface-container-lowest px-3.5 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest"
+                    }
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="mt-6 overflow-hidden rounded-2xl">
