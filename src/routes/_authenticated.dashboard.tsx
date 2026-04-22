@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Plus, Filter, Search, Eye, Clock, FolderCog, BarChart3, CalendarDays, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -28,18 +28,20 @@ function Dashboard() {
   const [reservas, setReservas] = useState<ReservaRow[]>([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
 
+  type TabKey = "atuais" | "futuras" | "passadas";
+  type StatusFilter = "todas" | "confirmada" | "cancelada";
+  const [tab, setTab] = useState<TabKey>("atuais");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("todas");
+
   const loadReservas = async () => {
     if (!user) return;
-    const today = format(new Date(), "yyyy-MM-dd");
     const { data, error } = await supabase
       .from("reservas")
       .select("id, reserva_date, start_time, end_time, status, posto:postos(code, name)")
       .eq("user_id", user.id)
-      .gte("reserva_date", today)
-      .neq("status", "cancelada")
-      .order("reserva_date", { ascending: true })
-      .order("start_time", { ascending: true })
-      .limit(20);
+      .order("reserva_date", { ascending: false })
+      .order("start_time", { ascending: false })
+      .limit(100);
     if (error) {
       toast.error("Não foi possível carregar reservas");
     } else {
