@@ -32,6 +32,7 @@ function Dashboard() {
   type StatusFilter = "todas" | "confirmada" | "cancelada";
   const [tab, setTab] = useState<TabKey>("atuais");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todas");
+  const [search, setSearch] = useState("");
 
   const loadReservas = async () => {
     if (!user) return;
