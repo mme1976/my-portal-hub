@@ -30,9 +30,11 @@ function Dashboard() {
 
   type TabKey = "atuais" | "futuras" | "passadas";
   type StatusFilter = "todas" | "confirmada" | "cancelada";
+  type SortOrder = "proximas" | "recentes";
   const [tab, setTab] = useState<TabKey>("atuais");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todas");
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("proximas");
 
   const loadReservas = async () => {
     if (!user) return;
