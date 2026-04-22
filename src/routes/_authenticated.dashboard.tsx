@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X, Search } from "lucide-react";
+import { Plus, Clock, FolderCog, BarChart3, CalendarDays, X, Search, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
