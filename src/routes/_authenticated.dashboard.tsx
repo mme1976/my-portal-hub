@@ -57,6 +57,11 @@ function Dashboard() {
     void loadReservas();
   }, [user?.id]);
 
+  // Default sort by tab: passadas → mais recentes, restantes → mais próximas
+  useEffect(() => {
+    setSortOrder(tab === "passadas" ? "recentes" : "proximas");
+  }, [tab]);
+
   const cancelReserva = async (id: string) => {
     const { error } = await supabase
       .from("reservas")
