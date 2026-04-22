@@ -170,6 +170,27 @@ function Dashboard() {
             </Link>
           </header>
 
+          {/* Pesquisa por posto */}
+          <div className="mt-5 relative max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Pesquisar por nome ou código do posto…"
+              className="w-full rounded-full border border-outline-variant/40 bg-surface-container-lowest py-2.5 pl-9 pr-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                title="Limpar pesquisa"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Tabs por momento */}
           <div className="mt-6 flex flex-wrap items-center gap-2 border-b border-outline-variant/15">
             {([
