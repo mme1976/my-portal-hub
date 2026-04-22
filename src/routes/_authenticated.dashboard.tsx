@@ -68,19 +68,30 @@ function Dashboard() {
     void loadReservas();
   };
 
+  // Apply text search across name + code first
+  const searched = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return reservas;
+    return reservas.filter((r) => {
+      const name = r.posto?.name?.toLowerCase() ?? "";
+      const code = r.posto?.code?.toLowerCase() ?? "";
+      return name.includes(q) || code.includes(q);
+    });
+  }, [reservas, search]);
+
   // Categorize by time vs today
   const today = format(new Date(), "yyyy-MM-dd");
   const buckets = useMemo(() => {
     const atuais: ReservaRow[] = [];
     const futuras: ReservaRow[] = [];
     const passadas: ReservaRow[] = [];
-    reservas.forEach((r) => {
+    searched.forEach((r) => {
       if (r.reserva_date < today) passadas.push(r);
       else if (r.reserva_date === today) atuais.push(r);
       else futuras.push(r);
     });
     return { atuais, futuras, passadas };
-  }, [reservas, today]);
+  }, [searched, today]);
 
   const tabReservas = buckets[tab];
   const filtered = useMemo(() => {
