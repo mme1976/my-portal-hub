@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FolderCog,
@@ -664,6 +664,3 @@ function UtilizadoresTab() {
     </div>
   );
 }
-
-// silence unused warning for `useEffect` reservation if it's tree-shaken
-void useEffect;
