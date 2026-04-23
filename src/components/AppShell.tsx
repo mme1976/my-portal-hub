@@ -16,14 +16,15 @@ import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import logoUrl from "@/assets/dgeec-logo.png";
 
-const nav = [
+const baseNav = [
   { to: "/dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/agendamentos", label: "Agendamentos", icon: CalendarDays },
   { to: "/pedidos/novo", label: "Novo Pedido", icon: FilePlus2 },
   { to: "/datasets", label: "Datasets", icon: Database },
   { to: "/analises", label: "Análises", icon: BarChart3 },
-  { to: "/administracao", label: "Administração", icon: ShieldCheck },
 ] as const;
+
+const adminNavItem = { to: "/administracao", label: "Administração", icon: ShieldCheck } as const;
 
 const topTabs = [
   { id: "painel", label: "Painel", paths: ["/dashboard", "/agendamentos", "/pedidos"] },
@@ -79,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <nav className="flex flex-col gap-1 text-sm">
-          {nav.map((item) => {
+          {[...baseNav, ...(hasRole("admin") ? [adminNavItem] : [])].map((item) => {
             const active = path === item.to || path.startsWith(item.to + "/");
             const Icon = item.icon;
             return (
