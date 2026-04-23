@@ -16,14 +16,15 @@ import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import logoUrl from "@/assets/dgeec-logo.png";
 
-const nav = [
+const baseNav = [
   { to: "/dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/agendamentos", label: "Agendamentos", icon: CalendarDays },
   { to: "/pedidos/novo", label: "Novo Pedido", icon: FilePlus2 },
   { to: "/datasets", label: "Datasets", icon: Database },
   { to: "/analises", label: "Análises", icon: BarChart3 },
-  { to: "/administracao", label: "Administração", icon: ShieldCheck },
 ] as const;
+
+const adminNavItem = { to: "/administracao", label: "Administração", icon: ShieldCheck } as const;
 
 const topTabs = [
   { id: "painel", label: "Painel", paths: ["/dashboard", "/agendamentos", "/pedidos"] },
