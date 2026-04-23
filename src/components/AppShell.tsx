@@ -80,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <nav className="flex flex-col gap-1 text-sm">
-          {nav.map((item) => {
+          {[...baseNav, ...(hasRole("admin") ? [adminNavItem] : [])].map((item) => {
             const active = path === item.to || path.startsWith(item.to + "/");
             const Icon = item.icon;
             return (
