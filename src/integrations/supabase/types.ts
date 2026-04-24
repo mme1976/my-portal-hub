@@ -14,6 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
+      homepage_avisos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_fim: string | null
+          id: string
+          mensagem: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string | null
+          id?: string
+          mensagem: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string | null
+          id?: string
+          mensagem?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
+      homepage_contactos: {
+        Row: {
+          email: string | null
+          horario: string | null
+          id: string
+          morada: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          email?: string | null
+          horario?: string | null
+          id?: string
+          morada?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          email?: string | null
+          horario?: string | null
+          id?: string
+          morada?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      homepage_datasets_destaque: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          created_at: string
+          descricao: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          created_at?: string
+          descricao: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          created_at?: string
+          descricao?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
+      homepage_hero: {
+        Row: {
+          id: string
+          subtitulo: string
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          subtitulo: string
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          subtitulo?: string
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      pedidos_dataset: {
+        Row: {
+          created_at: string
+          dados_pretendidos: string
+          descricao: string
+          finalidade: string
+          id: string
+          status: Database["public"]["Enums"]["pedido_status"]
+          titulo_estudo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dados_pretendidos: string
+          descricao: string
+          finalidade: string
+          id?: string
+          status?: Database["public"]["Enums"]["pedido_status"]
+          titulo_estudo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dados_pretendidos?: string
+          descricao?: string
+          finalidade?: string
+          id?: string
+          status?: Database["public"]["Enums"]["pedido_status"]
+          titulo_estudo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pedidos_historico: {
+        Row: {
+          alterado_por: string
+          created_at: string
+          id: string
+          nota: string | null
+          pedido_id: string
+          status_anterior: Database["public"]["Enums"]["pedido_status"] | null
+          status_novo: Database["public"]["Enums"]["pedido_status"]
+        }
+        Insert: {
+          alterado_por: string
+          created_at?: string
+          id?: string
+          nota?: string | null
+          pedido_id: string
+          status_anterior?: Database["public"]["Enums"]["pedido_status"] | null
+          status_novo: Database["public"]["Enums"]["pedido_status"]
+        }
+        Update: {
+          alterado_por?: string
+          created_at?: string
+          id?: string
+          nota?: string | null
+          pedido_id?: string
+          status_anterior?: Database["public"]["Enums"]["pedido_status"] | null
+          status_novo?: Database["public"]["Enums"]["pedido_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_historico_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos_dataset"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       postos: {
         Row: {
           available: boolean
@@ -46,29 +228,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           email: string
           full_name: string
           id: string
           institution: string | null
+          motivo_rejeicao: string | null
           position: string | null
           updated_at: string
         }
         Insert: {
+          account_status?: Database["public"]["Enums"]["account_status"]
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           email: string
           full_name?: string
           id: string
           institution?: string | null
+          motivo_rejeicao?: string | null
           position?: string | null
           updated_at?: string
         }
         Update: {
+          account_status?: Database["public"]["Enums"]["account_status"]
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
           institution?: string | null
+          motivo_rejeicao?: string | null
           position?: string | null
           updated_at?: string
         }
@@ -156,7 +350,16 @@ export type Database = {
       }
     }
     Enums: {
+      account_status: "pendente" | "aprovado" | "rejeitado"
       app_role: "admin" | "investigador"
+      pedido_status:
+        | "submetido"
+        | "em_analise"
+        | "pedido_esclarecimento"
+        | "aprovado"
+        | "rejeitado"
+        | "em_anonimizacao"
+        | "concluido"
       reserva_status: "confirmada" | "cancelada" | "concluida"
     }
     CompositeTypes: {
@@ -285,7 +488,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["pendente", "aprovado", "rejeitado"],
       app_role: ["admin", "investigador"],
+      pedido_status: [
+        "submetido",
+        "em_analise",
+        "pedido_esclarecimento",
+        "aprovado",
+        "rejeitado",
+        "em_anonimizacao",
+        "concluido",
+      ],
       reserva_status: ["confirmada", "cancelada", "concluida"],
     },
   },
