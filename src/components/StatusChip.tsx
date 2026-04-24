@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type Tone = "primary" | "secondary" | "success" | "warning" | "error" | "neutral";
+type Tone = "primary" | "secondary" | "success" | "warning" | "error" | "neutral" | "tertiary";
 
 const tones: Record<Tone, string> = {
   primary: "bg-primary-container text-on-primary-container",
@@ -9,6 +9,7 @@ const tones: Record<Tone, string> = {
   warning: "bg-warning-container text-on-warning-container",
   error: "bg-error-container text-on-error-container",
   neutral: "bg-surface-container-highest text-on-surface-variant",
+  tertiary: "bg-tertiary-container text-on-tertiary-container",
 };
 
 export function StatusChip({

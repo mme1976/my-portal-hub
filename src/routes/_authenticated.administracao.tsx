@@ -12,12 +12,18 @@ import {
   Loader2,
   ShieldCheck,
   ShieldOff,
+  FileText,
+  UserCheck,
+  LayoutTemplate,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
 import { supabase } from "@/integrations/supabase/client";
 import { authSnapshot, useAuth } from "@/lib/auth/auth-context";
+import { PedidosTab } from "@/components/admin/PedidosTab";
+import { ContasTab } from "@/components/admin/ContasTab";
+import { HomepageTab } from "@/components/admin/HomepageTab";
 
 export const Route = createFileRoute("/_authenticated/administracao")({
   beforeLoad: ({ location }) => {
@@ -29,11 +35,11 @@ export const Route = createFileRoute("/_authenticated/administracao")({
   head: () => ({ meta: [{ title: "Administração · DGEEC SafeCenter" }] }),
 });
 
-type Tab = "reservas" | "postos" | "utilizadores";
+type Tab = "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores";
 
 function AdminPage() {
-  const { hasRole, loading } = useAuth();
-  const [tab, setTab] = useState<Tab>("reservas");
+  const { hasRole, loading, user } = useAuth();
+  const [tab, setTab] = useState<Tab>("pedidos");
 
   // Client-side role guard (role only known after profile load)
   if (loading) {
@@ -72,13 +78,16 @@ function AdminPage() {
             Administração
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-on-surface-variant">
-            Gestão de reservas, postos de trabalho e utilizadores do DGEEC SafeCenter.
+            Pedidos de dataset, contas, homepage, reservas, postos e utilizadores do DGEEC SafeCenter.
           </p>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-1 border-b border-outline-variant/20">
           {(
             [
+              { id: "pedidos", label: "Pedidos", icon: FileText },
+              { id: "contas", label: "Contas", icon: UserCheck },
+              { id: "homepage", label: "Homepage", icon: LayoutTemplate },
               { id: "reservas", label: "Reservas", icon: CalendarDays },
               { id: "postos", label: "Postos", icon: Building2 },
               { id: "utilizadores", label: "Utilizadores", icon: Users },
@@ -104,6 +113,9 @@ function AdminPage() {
         </div>
 
         <div className="mt-8">
+          {tab === "pedidos" && <PedidosTab adminUserId={user?.id} />}
+          {tab === "contas" && <ContasTab adminUserId={user?.id} />}
+          {tab === "homepage" && <HomepageTab />}
           {tab === "reservas" && <ReservasTab />}
           {tab === "postos" && <PostosTab />}
           {tab === "utilizadores" && <UtilizadoresTab />}
