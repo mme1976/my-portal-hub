@@ -6,6 +6,7 @@ import { pt } from "date-fns/locale";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { StatusChip } from "@/components/StatusChip";
+import { MeusPedidos } from "@/components/dashboard/MeusPedidos";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -377,6 +378,8 @@ function Dashboard() {
             )}
           </div>
         </section>
+
+        {user?.id && <MeusPedidos userId={user.id} />}
 
         {/* Bottom strip */}
         <div className="mt-8 grid gap-6 md:grid-cols-2">
