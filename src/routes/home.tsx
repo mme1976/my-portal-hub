@@ -97,6 +97,26 @@ function HomePage() {
         </nav>
       </header>
 
+      {/* Avisos / banners */}
+      {avisos.length > 0 && (
+        <section className="mx-auto mt-6 max-w-7xl px-6 md:px-12">
+          <div className="space-y-2">
+            {avisos.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-start gap-3 rounded-2xl bg-warning-container/60 p-4 text-on-warning-container"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
+                <div>
+                  <p className="font-display text-sm font-bold">{a.titulo}</p>
+                  <p className="mt-1 text-xs leading-relaxed">{a.mensagem}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pt-12 md:px-12 md:pt-16">
         <div className="relative">
@@ -105,16 +125,10 @@ function HomePage() {
             Ambiente de Computação Seguro
           </span>
           <h1 className="relative mt-6 max-w-3xl font-display text-5xl font-extrabold leading-[1.05] text-on-surface md:text-6xl">
-            O SafeCenter para Investigação de{" "}
-            <span className="bg-gradient-to-r from-primary to-primary-dim bg-clip-text text-transparent">
-              Alta Integridade
-            </span>
-            .
+            {heroTitulo}
           </h1>
           <p className="relative mt-6 max-w-2xl text-base leading-relaxed text-on-surface-variant">
-            O DGEEC SafeCenter oferece aos investigadores um ambiente isolado e de alta segurança
-            para processar conjuntos de dados sensíveis. Reserve o seu posto de trabalho dedicado
-            para garantir o anonimato total dos dados e conformidade regulamentar.
+            {heroSubtitulo}
           </p>
 
           <div className="relative mt-9 flex flex-wrap gap-3">
@@ -126,14 +140,43 @@ function HomePage() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
-              href="#protocolos"
+              href="#destaques"
               className="inline-flex items-center gap-2 rounded-md bg-surface-container-highest px-6 py-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-high"
             >
-              Ver Protocolos
+              Ver datasets em destaque
             </a>
           </div>
         </div>
       </section>
+
+      {/* Datasets em destaque */}
+      {destaques.length > 0 && (
+        <section id="destaques" className="mx-auto mt-24 max-w-7xl px-6 md:px-12">
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <h2 className="font-display text-3xl font-extrabold text-on-surface">Datasets em destaque</h2>
+              <p className="mt-2 text-sm text-on-surface-variant">
+                Conjuntos de dados disponíveis para investigação no SafeCentre.
+              </p>
+            </div>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {destaques.map((d) => (
+              <article key={d.id} className="rounded-2xl bg-surface-container-lowest p-6 shadow-tonal-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-container text-on-primary-container">
+                  <FolderCog className="h-5 w-5" />
+                </div>
+                {d.categoria && (
+                  <p className="label-eyebrow mt-4">{d.categoria}</p>
+                )}
+                <h3 className="mt-2 font-display text-lg font-bold text-on-surface">{d.nome}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">{d.descricao}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {/* Stats strip */}
       <section className="mx-auto mt-20 max-w-7xl px-6 md:px-12">
