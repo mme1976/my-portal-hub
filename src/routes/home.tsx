@@ -1,12 +1,66 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, ArrowRight, Lock, Database, Cpu, Microscope, Wrench } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ShieldCheck, ArrowRight, Lock, Database, Cpu, Microscope, Wrench, AlertTriangle, Mail, Phone, MapPin, Clock as ClockIcon, FolderCog } from "lucide-react";
 import logoUrl from "@/assets/dgeec-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/home")({
   component: HomePage,
 });
 
+type HeroRow = { titulo: string; subtitulo: string };
+type AvisoRow = { id: string; titulo: string; mensagem: string };
+type DestaqueRow = { id: string; nome: string; descricao: string; categoria: string | null };
+type ContactosRow = { email: string | null; telefone: string | null; morada: string | null; horario: string | null };
+
 function HomePage() {
+  const heroQ = useQuery({
+    queryKey: ["home", "hero"],
+    queryFn: async () => {
+      const { data } = await supabase.from("homepage_hero").select("titulo, subtitulo").maybeSingle();
+      return (data ?? null) as HeroRow | null;
+    },
+  });
+  const avisosQ = useQuery({
+    queryKey: ["home", "avisos"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("homepage_avisos")
+        .select("id, titulo, mensagem")
+        .eq("ativo", true)
+        .order("created_at", { ascending: false });
+      return (data ?? []) as AvisoRow[];
+    },
+  });
+  const destaquesQ = useQuery({
+    queryKey: ["home", "destaques"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("homepage_datasets_destaque")
+        .select("id, nome, descricao, categoria")
+        .eq("ativo", true)
+        .order("ordem", { ascending: true });
+      return (data ?? []) as DestaqueRow[];
+    },
+  });
+  const contactosQ = useQuery({
+    queryKey: ["home", "contactos"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("homepage_contactos")
+        .select("email, telefone, morada, horario")
+        .maybeSingle();
+      return (data ?? null) as ContactosRow | null;
+    },
+  });
+
+  const heroTitulo = heroQ.data?.titulo ?? "O SafeCenter para Investigação de Alta Integridade.";
+  const heroSubtitulo = heroQ.data?.subtitulo ?? "O DGEEC SafeCenter oferece aos investigadores um ambiente isolado e de alta segurança para processar conjuntos de dados sensíveis.";
+  const avisos = avisosQ.data ?? [];
+  const destaques = destaquesQ.data ?? [];
+  const contactos = contactosQ.data;
+
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Top header */}
