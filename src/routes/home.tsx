@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, ArrowRight, Lock, Database, Cpu, Microscope, Wrench, AlertTriangle, Mail, Phone, MapPin, Clock as ClockIcon, FolderCog } from "lucide-react";
+import { ArrowRight, Lock, Database, Cpu, Microscope, Wrench, AlertTriangle, Mail, Phone, MapPin, Clock as ClockIcon, FolderCog } from "lucide-react";
 import logoUrl from "@/assets/dgeec-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
