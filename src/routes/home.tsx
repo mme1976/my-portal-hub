@@ -340,6 +340,45 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Contactos */}
+      {contactos && (contactos.email || contactos.telefone || contactos.morada || contactos.horario) && (
+        <section id="contactos" className="mx-auto mt-24 max-w-7xl px-6 md:px-12">
+          <h2 className="font-display text-3xl font-extrabold text-on-surface">Contactos</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {contactos.email && (
+              <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-tonal-sm">
+                <Mail className="h-5 w-5 text-primary" />
+                <p className="label-eyebrow mt-3">Email</p>
+                <a href={`mailto:${contactos.email}`} className="mt-1 block text-sm font-semibold text-on-surface hover:underline">
+                  {contactos.email}
+                </a>
+              </div>
+            )}
+            {contactos.telefone && (
+              <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-tonal-sm">
+                <Phone className="h-5 w-5 text-primary" />
+                <p className="label-eyebrow mt-3">Telefone</p>
+                <p className="mt-1 text-sm font-semibold text-on-surface">{contactos.telefone}</p>
+              </div>
+            )}
+            {contactos.morada && (
+              <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-tonal-sm">
+                <MapPin className="h-5 w-5 text-primary" />
+                <p className="label-eyebrow mt-3">Morada</p>
+                <p className="mt-1 text-sm font-semibold text-on-surface">{contactos.morada}</p>
+              </div>
+            )}
+            {contactos.horario && (
+              <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-tonal-sm">
+                <ClockIcon className="h-5 w-5 text-primary" />
+                <p className="label-eyebrow mt-3">Horário</p>
+                <p className="mt-1 text-sm font-semibold text-on-surface">{contactos.horario}</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <footer className="mx-auto mt-20 flex max-w-7xl flex-wrap items-center gap-6 px-6 pb-12 text-xs text-on-surface-variant md:px-12">
         <div className="flex items-center gap-3">
           <Database className="h-4 w-4" />
