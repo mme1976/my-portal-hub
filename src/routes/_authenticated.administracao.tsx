@@ -15,6 +15,7 @@ import {
   FileText,
   UserCheck,
   LayoutTemplate,
+  ScrollText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -24,6 +25,7 @@ import { authSnapshot, useAuth } from "@/lib/auth/auth-context";
 import { PedidosTab } from "@/components/admin/PedidosTab";
 import { ContasTab } from "@/components/admin/ContasTab";
 import { HomepageTab } from "@/components/admin/HomepageTab";
+import { ProtocolosTab } from "@/components/admin/ProtocolosTab";
 
 export const Route = createFileRoute("/_authenticated/administracao")({
   beforeLoad: ({ location }) => {
@@ -35,11 +37,11 @@ export const Route = createFileRoute("/_authenticated/administracao")({
   head: () => ({ meta: [{ title: "Administração · DGEEC SafeCenter" }] }),
 });
 
-type Tab = "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores";
+type Tab = "protocolos" | "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores";
 
 function AdminPage() {
   const { hasRole, loading, user } = useAuth();
-  const [tab, setTab] = useState<Tab>("pedidos");
+  const [tab, setTab] = useState<Tab>("protocolos");
 
   // Client-side role guard (role only known after profile load)
   if (loading) {
@@ -78,13 +80,14 @@ function AdminPage() {
             Administração
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-on-surface-variant">
-            Pedidos de dataset, contas, homepage, reservas, postos e utilizadores do DGEEC SafeCenter.
+            Protocolos, pedidos de dataset, contas, homepage, reservas, postos e utilizadores do DGEEC SafeCenter.
           </p>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-1 border-b border-outline-variant/20">
           {(
             [
+              { id: "protocolos", label: "Protocolos", icon: ScrollText },
               { id: "pedidos", label: "Pedidos", icon: FileText },
               { id: "contas", label: "Contas", icon: UserCheck },
               { id: "homepage", label: "Homepage", icon: LayoutTemplate },
@@ -113,6 +116,7 @@ function AdminPage() {
         </div>
 
         <div className="mt-8">
+          {tab === "protocolos" && <ProtocolosTab adminUserId={user?.id} />}
           {tab === "pedidos" && <PedidosTab adminUserId={user?.id} />}
           {tab === "contas" && <ContasTab adminUserId={user?.id} />}
           {tab === "homepage" && <HomepageTab />}
