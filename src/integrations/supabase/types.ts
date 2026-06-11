@@ -238,6 +238,7 @@ export type Database = {
           institution: string | null
           motivo_rejeicao: string | null
           position: string | null
+          protocolo_id: string | null
           updated_at: string
         }
         Insert: {
@@ -251,6 +252,7 @@ export type Database = {
           institution?: string | null
           motivo_rejeicao?: string | null
           position?: string | null
+          protocolo_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -264,6 +266,60 @@ export type Database = {
           institution?: string | null
           motivo_rejeicao?: string | null
           position?: string | null
+          protocolo_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_assinatura: string
+          estado: Database["public"]["Enums"]["protocolo_estado"]
+          finalidade: string
+          id: string
+          nome: string
+          observacoes: string | null
+          outorgantes: string
+          protocolo_pdf_path: string | null
+          tematica: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_assinatura: string
+          estado?: Database["public"]["Enums"]["protocolo_estado"]
+          finalidade: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          outorgantes: string
+          protocolo_pdf_path?: string | null
+          tematica: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_assinatura?: string
+          estado?: Database["public"]["Enums"]["protocolo_estado"]
+          finalidade?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          outorgantes?: string
+          protocolo_pdf_path?: string | null
+          tematica?: string
           updated_at?: string
         }
         Relationships: []
@@ -360,6 +416,7 @@ export type Database = {
         | "rejeitado"
         | "em_anonimizacao"
         | "concluido"
+      protocolo_estado: "ativo" | "inativo"
       reserva_status: "confirmada" | "cancelada" | "concluida"
     }
     CompositeTypes: {
@@ -499,6 +556,7 @@ export const Constants = {
         "em_anonimizacao",
         "concluido",
       ],
+      protocolo_estado: ["ativo", "inativo"],
       reserva_status: ["confirmada", "cancelada", "concluida"],
     },
   },
