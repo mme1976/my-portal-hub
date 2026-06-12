@@ -2,8 +2,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  FolderCog,
-  Check,
   X,
   Search,
   Users,
@@ -16,6 +14,7 @@ import {
   UserCheck,
   LayoutTemplate,
   ScrollText,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -26,6 +25,8 @@ import { PedidosTab } from "@/components/admin/PedidosTab";
 import { ContasTab } from "@/components/admin/ContasTab";
 import { HomepageTab } from "@/components/admin/HomepageTab";
 import { ProtocolosTab } from "@/components/admin/ProtocolosTab";
+import { PostosTab } from "@/components/admin/PostosTab";
+import { AnalisesGeraisTab } from "@/components/admin/AnalisesGeraisTab";
 
 export const Route = createFileRoute("/_authenticated/administracao")({
   beforeLoad: ({ location }) => {
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/administracao")({
   head: () => ({ meta: [{ title: "Administração · DGEEC SafeCenter" }] }),
 });
 
-type Tab = "protocolos" | "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores";
+type Tab = "protocolos" | "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores" | "analises";
 
 function AdminPage() {
   const { hasRole, loading, user } = useAuth();
@@ -94,6 +95,7 @@ function AdminPage() {
               { id: "reservas", label: "Reservas", icon: CalendarDays },
               { id: "postos", label: "Postos", icon: Building2 },
               { id: "utilizadores", label: "Utilizadores", icon: Users },
+              { id: "analises", label: "Análises Gerais", icon: BarChart3 },
             ] as const
           ).map((t) => {
             const Icon = t.icon;
@@ -123,6 +125,7 @@ function AdminPage() {
           {tab === "reservas" && <ReservasTab />}
           {tab === "postos" && <PostosTab />}
           {tab === "utilizadores" && <UtilizadoresTab />}
+          {tab === "analises" && <AnalisesGeraisTab />}
         </div>
       </div>
     </AppShell>
