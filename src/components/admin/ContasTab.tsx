@@ -15,8 +15,11 @@ type ProfileRow = {
   position: string | null;
   account_status: AccountStatus;
   motivo_rejeicao: string | null;
+  protocolo_id: string | null;
   created_at: string;
 };
+
+type ProtocoloLookup = { id: string; nome: string; estado: "ativo" | "inativo" };
 
 const STATUS_LABEL: Record<AccountStatus, string> = {
   pendente: "Pendente",
@@ -36,6 +39,8 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
   const [statusFilter, setStatusFilter] = useState<AccountStatus | "todos">("pendente");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [approveProtocoloId, setApproveProtocoloId] = useState<string>("");
 
   const profilesQ = useQuery({
     queryKey: ["admin", "profiles-with-status"],
@@ -49,9 +54,22 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
     },
   });
 
+  const protocolosQ = useQuery({
+    queryKey: ["admin", "protocolos-lookup"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("protocolos")
+        .select("id, nome, estado")
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as ProtocoloLookup[];
+    },
+  });
+
   const approveMut = useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async ({ userId, protocoloId }: { userId: string; protocoloId: string }) => {
       if (!adminUserId) throw new Error("Sessão inválida");
+      if (!protocoloId) throw new Error("Selecione um protocolo");
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -59,12 +77,15 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
           approved_at: new Date().toISOString(),
           approved_by: adminUserId,
           motivo_rejeicao: null,
+          protocolo_id: protocoloId,
         })
         .eq("id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Conta aprovada");
+      toast.success("Conta aprovada e associada ao protocolo");
+      setApprovingId(null);
+      setApproveProtocoloId("");
       void qc.invalidateQueries({ queryKey: ["admin", "profiles-with-status"] });
     },
     onError: (e: Error) => toast.error("Falha ao aprovar", { description: e.message }),
@@ -86,6 +107,17 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
     },
     onError: (e: Error) => toast.error("Falha ao rejeitar", { description: e.message }),
   });
+
+  const protocoloMap = useMemo(() => {
+    const m = new Map<string, ProtocoloLookup>();
+    (protocolosQ.data ?? []).forEach((p) => m.set(p.id, p));
+    return m;
+  }, [protocolosQ.data]);
+
+  const protocolosAtivos = useMemo(
+    () => (protocolosQ.data ?? []).filter((p) => p.estado === "ativo"),
+    [protocolosQ.data],
+  );
 
   const filtered = useMemo(() => {
     const all = profilesQ.data ?? [];
@@ -110,7 +142,7 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
         <div>
           <h2 className="font-display text-xl font-bold text-on-surface">Contas de investigador</h2>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Aprove ou rejeite os pedidos de registo. Contas pendentes não podem aceder ao portal.
+            Aprove ou rejeite os pedidos de registo. Ao aprovar, associe a conta a um protocolo.
           </p>
         </div>
         {pendentesCount > 0 && (
@@ -158,97 +190,154 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
           </p>
         ) : (
           <ul className="space-y-2">
-            {filtered.map((p) => (
-              <li
-                key={p.id}
-                className="rounded-2xl bg-surface-container-lowest p-5 shadow-tonal-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-tertiary-container font-display text-xs font-bold text-on-tertiary-container">
-                      <UserCheck className="h-4 w-4" />
+            {filtered.map((p) => {
+              const proto = p.protocolo_id ? protocoloMap.get(p.protocolo_id) : null;
+              return (
+                <li
+                  key={p.id}
+                  className="rounded-2xl bg-surface-container-lowest p-5 shadow-tonal-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-tertiary-container font-display text-xs font-bold text-on-tertiary-container">
+                        <UserCheck className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-on-surface">
+                          {p.full_name || "(sem nome)"}
+                        </p>
+                        <p className="text-xs text-on-surface-variant">{p.email}</p>
+                        <p className="mt-1 text-xs text-on-surface-variant">
+                          {p.institution ?? "Sem instituição"} · {p.position ?? "Investigador"}
+                        </p>
+                        {proto && (
+                          <p className="mt-1 text-xs text-primary">
+                            Protocolo: <span className="font-semibold">{proto.nome}</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-on-surface">
-                        {p.full_name || "(sem nome)"}
-                      </p>
-                      <p className="text-xs text-on-surface-variant">{p.email}</p>
-                      <p className="mt-1 text-xs text-on-surface-variant">
-                        {p.institution ?? "Sem instituição"} · {p.position ?? "Investigador"}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <StatusChip tone={STATUS_TONE[p.account_status]} dot>
+                        {STATUS_LABEL[p.account_status]}
+                      </StatusChip>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <StatusChip tone={STATUS_TONE[p.account_status]} dot>
-                      {STATUS_LABEL[p.account_status]}
-                    </StatusChip>
-                  </div>
-                </div>
-                {p.motivo_rejeicao && p.account_status === "rejeitado" && (
-                  <p className="mt-3 rounded-lg bg-error-container/40 p-3 text-xs text-on-error-container">
-                    <strong>Motivo:</strong> {p.motivo_rejeicao}
-                  </p>
-                )}
-                {p.account_status === "pendente" && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => approveMut.mutate(p.id)}
-                      disabled={approveMut.isPending}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-success-container px-4 py-2 text-xs font-semibold text-on-success-container hover:opacity-90 disabled:opacity-40"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Aprovar
-                    </button>
-                    <button
-                      onClick={() => {
-                        setRejectingId(p.id);
-                        setMotivo("");
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-error-container/70 px-4 py-2 text-xs font-semibold text-on-error-container hover:opacity-90"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Rejeitar
-                    </button>
-                  </div>
-                )}
-                {rejectingId === p.id && (
-                  <div className="mt-3 rounded-lg bg-surface-container-low p-4">
-                    <p className="label-eyebrow">Motivo da rejeição</p>
-                    <textarea
-                      value={motivo}
-                      onChange={(e) => setMotivo(e.target.value)}
-                      rows={2}
-                      placeholder="Ex: Não foi possível verificar a afiliação institucional."
-                      className="mt-2 w-full rounded-md bg-surface-container-lowest px-3 py-2 text-sm outline outline-2 outline-transparent focus:outline-primary"
-                    />
-                    <div className="mt-3 flex gap-2">
+                  {p.motivo_rejeicao && p.account_status === "rejeitado" && (
+                    <p className="mt-3 rounded-lg bg-error-container/40 p-3 text-xs text-on-error-container">
+                      <strong>Motivo:</strong> {p.motivo_rejeicao}
+                    </p>
+                  )}
+                  {p.account_status === "pendente" && approvingId !== p.id && rejectingId !== p.id && (
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <button
                         onClick={() => {
-                          if (!motivo.trim()) {
-                            toast.error("Indique o motivo");
-                            return;
-                          }
-                          rejectMut.mutate({ id: p.id, reason: motivo.trim() });
+                          setApprovingId(p.id);
+                          setApproveProtocoloId("");
                         }}
-                        disabled={rejectMut.isPending}
-                        className="rounded-md bg-error px-4 py-1.5 text-xs font-semibold text-on-error disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-success-container px-4 py-2 text-xs font-semibold text-on-success-container hover:opacity-90"
                       >
-                        Confirmar rejeição
+                        <Check className="h-3.5 w-3.5" />
+                        Aprovar
                       </button>
                       <button
                         onClick={() => {
-                          setRejectingId(null);
+                          setRejectingId(p.id);
                           setMotivo("");
                         }}
-                        className="rounded-md px-4 py-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-error-container/70 px-4 py-2 text-xs font-semibold text-on-error-container hover:opacity-90"
                       >
-                        Cancelar
+                        <X className="h-3.5 w-3.5" />
+                        Rejeitar
                       </button>
                     </div>
-                  </div>
-                )}
-              </li>
-            ))}
+                  )}
+                  {approvingId === p.id && (
+                    <div className="mt-3 rounded-lg bg-surface-container-low p-4">
+                      <p className="label-eyebrow">Associar a protocolo</p>
+                      {protocolosAtivos.length === 0 ? (
+                        <p className="mt-2 text-xs text-error">
+                          Não há protocolos ativos. Crie um protocolo na tab «Protocolos» antes de aprovar.
+                        </p>
+                      ) : (
+                        <select
+                          value={approveProtocoloId}
+                          onChange={(e) => setApproveProtocoloId(e.target.value)}
+                          className="mt-2 w-full rounded-md bg-surface-container-lowest px-3 py-2 text-sm outline outline-2 outline-transparent focus:outline-primary"
+                        >
+                          <option value="">— Selecione um protocolo —</option>
+                          {protocolosAtivos.map((pp) => (
+                            <option key={pp.id} value={pp.id}>
+                              {pp.nome}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => {
+                            if (!approveProtocoloId) {
+                              toast.error("Selecione um protocolo");
+                              return;
+                            }
+                            approveMut.mutate({ userId: p.id, protocoloId: approveProtocoloId });
+                          }}
+                          disabled={approveMut.isPending || !approveProtocoloId}
+                          className="rounded-md bg-success px-4 py-1.5 text-xs font-semibold text-on-success disabled:opacity-50"
+                        >
+                          Confirmar aprovação
+                        </button>
+                        <button
+                          onClick={() => {
+                            setApprovingId(null);
+                            setApproveProtocoloId("");
+                          }}
+                          className="rounded-md px-4 py-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {rejectingId === p.id && (
+                    <div className="mt-3 rounded-lg bg-surface-container-low p-4">
+                      <p className="label-eyebrow">Motivo da rejeição</p>
+                      <textarea
+                        value={motivo}
+                        onChange={(e) => setMotivo(e.target.value)}
+                        rows={2}
+                        placeholder="Ex: Não foi possível verificar a afiliação institucional."
+                        className="mt-2 w-full rounded-md bg-surface-container-lowest px-3 py-2 text-sm outline outline-2 outline-transparent focus:outline-primary"
+                      />
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => {
+                            if (!motivo.trim()) {
+                              toast.error("Indique o motivo");
+                              return;
+                            }
+                            rejectMut.mutate({ id: p.id, reason: motivo.trim() });
+                          }}
+                          disabled={rejectMut.isPending}
+                          className="rounded-md bg-error px-4 py-1.5 text-xs font-semibold text-on-error disabled:opacity-50"
+                        >
+                          Confirmar rejeição
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRejectingId(null);
+                            setMotivo("");
+                          }}
+                          className="rounded-md px-4 py-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
