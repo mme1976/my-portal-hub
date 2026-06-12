@@ -2,8 +2,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  FolderCog,
-  Check,
   X,
   Search,
   Users,
@@ -16,6 +14,7 @@ import {
   UserCheck,
   LayoutTemplate,
   ScrollText,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -26,6 +25,8 @@ import { PedidosTab } from "@/components/admin/PedidosTab";
 import { ContasTab } from "@/components/admin/ContasTab";
 import { HomepageTab } from "@/components/admin/HomepageTab";
 import { ProtocolosTab } from "@/components/admin/ProtocolosTab";
+import { PostosTab } from "@/components/admin/PostosTab";
+import { AnalisesGeraisTab } from "@/components/admin/AnalisesGeraisTab";
 
 export const Route = createFileRoute("/_authenticated/administracao")({
   beforeLoad: ({ location }) => {
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/administracao")({
   head: () => ({ meta: [{ title: "Administração · DGEEC SafeCenter" }] }),
 });
 
-type Tab = "protocolos" | "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores";
+type Tab = "protocolos" | "pedidos" | "contas" | "homepage" | "reservas" | "postos" | "utilizadores" | "analises";
 
 function AdminPage() {
   const { hasRole, loading, user } = useAuth();
@@ -94,6 +95,7 @@ function AdminPage() {
               { id: "reservas", label: "Reservas", icon: CalendarDays },
               { id: "postos", label: "Postos", icon: Building2 },
               { id: "utilizadores", label: "Utilizadores", icon: Users },
+              { id: "analises", label: "Análises Gerais", icon: BarChart3 },
             ] as const
           ).map((t) => {
             const Icon = t.icon;
@@ -123,6 +125,7 @@ function AdminPage() {
           {tab === "reservas" && <ReservasTab />}
           {tab === "postos" && <PostosTab />}
           {tab === "utilizadores" && <UtilizadoresTab />}
+          {tab === "analises" && <AnalisesGeraisTab />}
         </div>
       </div>
     </AppShell>
@@ -363,114 +366,6 @@ function ReservasTab() {
   );
 }
 
-/* ─────────────────────────── POSTOS ─────────────────────────── */
-
-type PostoRow = {
-  id: string;
-  name: string;
-  code: string;
-  description: string | null;
-  available: boolean;
-};
-
-function PostosTab() {
-  const qc = useQueryClient();
-
-  const postosQ = useQuery({
-    queryKey: ["admin", "postos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("postos")
-        .select("*")
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as PostoRow[];
-    },
-  });
-
-  const toggleMut = useMutation({
-    mutationFn: async ({ id, available }: { id: string; available: boolean }) => {
-      const { error } = await supabase.from("postos").update({ available }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Estado do posto atualizado");
-      void qc.invalidateQueries({ queryKey: ["admin", "postos"] });
-    },
-    onError: (e: Error) => toast.error("Falha ao atualizar posto", { description: e.message }),
-  });
-
-  return (
-    <div className="rounded-3xl bg-surface-container-low p-6 md:p-8">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-xl font-bold text-on-surface">Postos de Trabalho</h2>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Ative ou desative postos. Postos inativos não aparecem disponíveis para reserva.
-          </p>
-        </div>
-        <FolderCog className="h-6 w-6 text-on-surface-variant" />
-      </header>
-
-      {postosQ.isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      ) : (postosQ.data?.length ?? 0) === 0 ? (
-        <p className="py-12 text-center text-sm text-on-surface-variant">
-          Ainda não existem postos. Adicione-os pelo painel de gestão da base de dados.
-        </p>
-      ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
-          {postosQ.data!.map((p) => (
-            <li
-              key={p.id}
-              className="relative overflow-hidden rounded-xl bg-surface-container-lowest p-4 pl-5 shadow-tonal-sm"
-            >
-              <span
-                className={`absolute left-0 top-0 h-full w-1 ${p.available ? "bg-success" : "bg-error"}`}
-              />
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-on-surface">{p.name}</p>
-                    <span className="font-mono text-[0.6875rem] text-on-surface-variant">
-                      {p.code}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-on-surface-variant">
-                    {p.available ? "Disponível para reserva" : "Indisponível / manutenção"}
-                  </p>
-                  {p.description && (
-                    <p className="mt-2 text-xs text-on-surface-variant/80">{p.description}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => toggleMut.mutate({ id: p.id, available: !p.available })}
-                  disabled={toggleMut.isPending}
-                  className={
-                    p.available
-                      ? "relative inline-flex h-6 w-11 flex-none items-center rounded-full bg-primary transition-colors disabled:opacity-50"
-                      : "relative inline-flex h-6 w-11 flex-none items-center rounded-full bg-outline-variant/40 transition-colors disabled:opacity-50"
-                  }
-                  aria-label={p.available ? "Desativar posto" : "Ativar posto"}
-                >
-                  <span
-                    className={
-                      p.available
-                        ? "absolute left-[22px] h-5 w-5 rounded-full bg-on-primary transition-all"
-                        : "absolute left-[2px] h-5 w-5 rounded-full bg-on-surface transition-all"
-                    }
-                  />
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 /* ─────────────────────────── UTILIZADORES ─────────────────────────── */
 
