@@ -202,7 +202,9 @@ function Dashboard() {
         {/* Reservas com tabs + filtro */}
         <section className="mt-10 rounded-3xl bg-surface-container-low p-8">
           <header className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="font-display text-xl font-bold text-on-surface">As Minhas Reservas</h2>
+            <h2 className="font-display text-xl font-bold text-on-surface">
+              Reservas {active ? `· ${active.nome}` : ""}
+            </h2>
             <Link to="/agendamentos" className="text-xs font-semibold text-primary hover:underline">
               Ver agendamentos →
             </Link>
