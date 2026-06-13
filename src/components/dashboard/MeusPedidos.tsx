@@ -42,11 +42,24 @@ export function MeusPedidos({ userId }: { userId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pedidos_dataset")
-        .select("id, titulo_estudo, finalidade, status, user_id, created_at, updated_at, autor:profiles!pedidos_dataset_user_id_fkey(full_name, email)")
+        .select("id, titulo_estudo, finalidade, status, user_id, created_at, updated_at")
         .eq("protocolo_id", activeId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as PedidoRow[];
+      const rows = (data ?? []) as PedidoRow[];
+      const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", ids);
+        const m = new Map((profs ?? []).map((p) => [p.id, p]));
+        rows.forEach((r) => {
+          const p = m.get(r.user_id);
+          r.autor = p ? { full_name: p.full_name, email: p.email } : null;
+        });
+      }
+      return rows;
     },
   });
 
