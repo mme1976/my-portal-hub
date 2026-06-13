@@ -363,6 +363,11 @@ function Dashboard() {
                           {r.posto?.name ?? "Posto"}
                         </p>
                         <p className="font-mono text-xs text-on-surface-variant">#{r.posto?.code}</p>
+                        {r.user_id !== user?.id && (
+                          <p className="mt-1 text-[0.6875rem] font-semibold text-tertiary">
+                            por {r.autor?.full_name || r.autor?.email || "colega"}
+                          </p>
+                        )}
                       </div>
                       <div className="col-span-3 text-on-surface-variant">
                         {format(parseISO(r.reserva_date), "d 'de' MMM 'de' yyyy", { locale: pt })}
@@ -382,7 +387,7 @@ function Dashboard() {
                         )}
                       </div>
                       <div className="col-span-1 flex justify-end">
-                        {!cancelled && !isPast ? (
+                        {!cancelled && !isPast && r.user_id === user?.id ? (
                           <button
                             onClick={() => cancelReserva(r.id)}
                             title="Cancelar reserva"
