@@ -9,6 +9,7 @@ import { StatusChip } from "@/components/StatusChip";
 import { MeusPedidos } from "@/components/dashboard/MeusPedidos";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
