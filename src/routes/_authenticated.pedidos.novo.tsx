@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/pedidos/novo")({
 function NovoPedido() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { active, protocolos } = useProtocolo();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [dadosPretendidos, setDadosPretendidos] = useState("");
@@ -24,6 +25,10 @@ function NovoPedido() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!active) {
+      toast.error("Selecione um protocolo no topo da página antes de submeter");
+      return;
+    }
     if (!titulo.trim() || !descricao.trim() || !dadosPretendidos.trim() || !finalidade.trim()) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
@@ -34,6 +39,7 @@ function NovoPedido() {
         .from("pedidos_dataset")
         .insert({
           user_id: user.id,
+          protocolo_id: active.id,
           titulo_estudo: titulo.trim(),
           descricao: descricao.trim(),
           dados_pretendidos: dadosPretendidos.trim(),
