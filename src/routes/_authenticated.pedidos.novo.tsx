@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 
 export const Route = createFileRoute("/_authenticated/pedidos/novo")({
   component: NovoPedido,
