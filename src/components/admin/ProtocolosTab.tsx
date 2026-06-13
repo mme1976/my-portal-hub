@@ -337,12 +337,11 @@ function ProtocoloDrawer({
     queryKey: ["admin", "protocolo-investigadores", protocolo.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, institution, position")
-        .eq("protocolo_id", protocolo.id)
-        .order("created_at", { ascending: false });
+        .from("protocolo_membros")
+        .select("user_id, profile:profiles!protocolo_membros_user_id_fkey(id, full_name, email, institution, position)")
+        .eq("protocolo_id", protocolo.id);
       if (error) throw error;
-      return (data ?? []) as InvestigadorRow[];
+      return ((data ?? []).map((r: any) => r.profile).filter(Boolean)) as InvestigadorRow[];
     },
   });
 
