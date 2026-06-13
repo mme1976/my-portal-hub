@@ -86,6 +86,20 @@ function NovoPedido() {
             Submeta o seu protocolo de investigação para avaliação. Após aprovação, o acesso
             aos microdados é feito presencialmente no Safe Centre — os dados nunca circulam pelo portal.
           </p>
+          {active ? (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary-container px-3 py-1.5 text-xs font-semibold text-on-primary-container">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              A submeter no protocolo: {active.nome}
+            </p>
+          ) : protocolos.length > 0 ? (
+            <p className="mt-3 inline-flex rounded-full bg-warning-container px-3 py-1.5 text-xs font-semibold text-on-warning-container">
+              Selecione um protocolo no topo da página antes de submeter.
+            </p>
+          ) : (
+            <p className="mt-3 inline-flex rounded-full bg-error-container px-3 py-1.5 text-xs font-semibold text-on-error-container">
+              Não está associado a nenhum protocolo. Contacte a administração.
+            </p>
+          )}
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">
