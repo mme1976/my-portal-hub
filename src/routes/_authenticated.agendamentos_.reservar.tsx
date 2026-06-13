@@ -107,6 +107,10 @@ function ReservarPage() {
       toast.error("Selecione posto, data e pelo menos um bloco horário");
       return;
     }
+    if (!active) {
+      toast.error("Selecione um protocolo no topo da página antes de reservar");
+      return;
+    }
     setSubmitting(true);
 
     // Group consecutive slots into single reservas
