@@ -152,10 +152,17 @@ function Dashboard() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="label-eyebrow">Dashboard de Investigação</p>
+            <p className="label-eyebrow">
+              {active ? `Protocolo · ${active.nome}` : "Dashboard de Investigação"}
+            </p>
             <h1 className="mt-2 font-display text-4xl font-extrabold text-on-surface">
               Bem-vindo, {displayName}
             </h1>
+            {active && (
+              <p className="mt-2 text-sm text-on-surface-variant">
+                A ver dados do protocolo <span className="font-semibold text-on-surface">{active.nome}</span>. Use o seletor no topo para mudar.
+              </p>
+            )}
           </div>
           <div className="flex gap-3">
             <Link
