@@ -135,6 +135,7 @@ function ReservarPage() {
     const inserts = groups.map((g) => ({
       posto_id: selectedPosto,
       user_id: user.id,
+      protocolo_id: active.id,
       reserva_date: dateStr,
       start_time: g.start,
       end_time: g.end,
