@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, FileText, Loader2, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Loader2, Plus, User } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -11,14 +11,17 @@ import {
   PEDIDO_STATUS_TONE,
   type PedidoStatus,
 } from "@/lib/pedidos";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 
 type PedidoRow = {
   id: string;
   titulo_estudo: string;
   finalidade: string;
   status: PedidoStatus;
+  user_id: string;
   created_at: string;
   updated_at: string;
+  autor?: { full_name: string | null; email: string } | null;
 };
 
 type HistoricoRow = {
@@ -31,17 +34,19 @@ type HistoricoRow = {
 
 export function MeusPedidos({ userId }: { userId: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const { activeId, active } = useProtocolo();
 
   const pedidosQ = useQuery({
-    queryKey: ["meus-pedidos", userId],
+    queryKey: ["pedidos-protocolo", activeId ?? "none"],
+    enabled: !!activeId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pedidos_dataset")
-        .select("id, titulo_estudo, finalidade, status, created_at, updated_at")
-        .eq("user_id", userId)
+        .select("id, titulo_estudo, finalidade, status, user_id, created_at, updated_at, autor:profiles!pedidos_dataset_user_id_fkey(full_name, email)")
+        .eq("protocolo_id", activeId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as PedidoRow[];
+      return (data ?? []) as unknown as PedidoRow[];
     },
   });
 
@@ -49,9 +54,9 @@ export function MeusPedidos({ userId }: { userId: string }) {
     <section className="mt-10 rounded-3xl bg-surface-container-low p-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-xl font-bold text-on-surface">Os meus pedidos de dataset</h2>
+          <h2 className="font-display text-xl font-bold text-on-surface">Pedidos de dataset do protocolo</h2>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Acompanhe o estado de cada pedido. Os datasets são acedidos exclusivamente nas instalações do SafeCentre.
+            {active ? <>A ver pedidos do protocolo <span className="font-semibold text-on-surface">{active.nome}</span>. Inclui pedidos submetidos por todos os investigadores associados.</> : "Selecione um protocolo no topo da página."}
           </p>
         </div>
         <Link
@@ -64,19 +69,20 @@ export function MeusPedidos({ userId }: { userId: string }) {
       </header>
 
       <div className="mt-6">
-        {pedidosQ.isLoading ? (
+        {!activeId ? null : pedidosQ.isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (pedidosQ.data ?? []).length === 0 ? (
           <div className="rounded-2xl bg-surface-container-lowest p-10 text-center">
             <FileText className="mx-auto h-8 w-8 text-on-surface-variant" />
-            <p className="mt-4 text-sm text-on-surface-variant">Ainda não submeteu nenhum pedido.</p>
+            <p className="mt-4 text-sm text-on-surface-variant">Ainda não existem pedidos neste protocolo.</p>
           </div>
         ) : (
           <ul className="space-y-2">
             {(pedidosQ.data ?? []).map((p) => {
               const open = openId === p.id;
+              const isMine = p.user_id === userId;
               return (
                 <li key={p.id} className="rounded-2xl bg-surface-container-lowest shadow-tonal-sm">
                   <button
@@ -84,7 +90,15 @@ export function MeusPedidos({ userId }: { userId: string }) {
                     className="flex w-full items-start justify-between gap-3 p-5 text-left"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-on-surface">{p.titulo_estudo}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-semibold text-on-surface">{p.titulo_estudo}</p>
+                        {!isMine && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-tertiary-container px-2 py-0.5 text-[0.625rem] font-semibold text-on-tertiary-container">
+                            <User className="h-3 w-3" />
+                            {p.autor?.full_name || p.autor?.email || "colega"}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-xs text-on-surface-variant">
                         Submetido a {format(parseISO(p.created_at), "d 'de' MMM yyyy", { locale: pt })}
                         {" · "}
