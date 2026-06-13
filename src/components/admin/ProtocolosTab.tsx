@@ -336,12 +336,19 @@ function ProtocoloDrawer({
   const investigadoresQ = useQuery({
     queryKey: ["admin", "protocolo-investigadores", protocolo.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: members, error } = await supabase
         .from("protocolo_membros")
-        .select("user_id, profile:profiles!protocolo_membros_user_id_fkey(id, full_name, email, institution, position)")
+        .select("user_id")
         .eq("protocolo_id", protocolo.id);
       if (error) throw error;
-      return ((data ?? []).map((r: any) => r.profile).filter(Boolean)) as InvestigadorRow[];
+      const ids = (members ?? []).map((m) => m.user_id);
+      if (!ids.length) return [] as InvestigadorRow[];
+      const { data: profs, error: pErr } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, institution, position")
+        .in("id", ids);
+      if (pErr) throw pErr;
+      return (profs ?? []) as InvestigadorRow[];
     },
   });
 
