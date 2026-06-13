@@ -151,8 +151,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </div>
           <div className="order-2 ml-auto flex items-center gap-2 md:order-none">
+            <ProtocoloSwitcher />
             <button className="flex h-10 w-10 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-highest">
               <Bell className="h-[18px] w-[18px]" />
+            </button>
             </button>
             <button className="flex h-10 w-10 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-highest">
               <Settings className="h-[18px] w-[18px]" />
