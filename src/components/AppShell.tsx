@@ -11,9 +11,11 @@ import {
   LogOut,
   Search,
   HelpCircle,
+  ChevronDown,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 import logoUrl from "@/assets/dgeec-logo.png";
 
 const baseNav = [
@@ -149,6 +151,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </div>
           <div className="order-2 ml-auto flex items-center gap-2 md:order-none">
+            <ProtocoloSwitcher />
             <button className="flex h-10 w-10 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-highest">
               <Bell className="h-[18px] w-[18px]" />
             </button>
@@ -169,6 +172,84 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="px-6 pb-24 pt-4 md:px-12">{children}</main>
       </div>
+    </div>
+  );
+}
+
+function ProtocoloSwitcher() {
+  const { protocolos, activeId, active, setActiveId, loading } = useProtocolo();
+  const { hasRole } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Admins não precisam de selecionar; mas mostramos um pequeno indicador opcional? Esconde para admins.
+  if (hasRole("admin")) return null;
+  if (loading) return null;
+  if (!protocolos.length) {
+    return (
+      <span className="hidden md:inline-flex rounded-full bg-warning-container px-3 py-1.5 text-[0.6875rem] font-semibold text-on-warning-container">
+        Sem protocolo associado
+      </span>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-[260px] items-center gap-2 rounded-lg bg-surface-container-highest px-3 py-2 text-left text-sm text-on-surface hover:bg-surface-container-high"
+        title="Mudar de protocolo"
+      >
+        <ShieldCheck className="h-4 w-4 flex-none text-primary" />
+        <span className="min-w-0 flex-1 truncate font-semibold">
+          {active?.nome ?? "Selecionar protocolo"}
+        </span>
+        <ChevronDown className={open ? "h-4 w-4 flex-none rotate-180 transition-transform" : "h-4 w-4 flex-none transition-transform"} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-40 mt-2 w-[300px] overflow-hidden rounded-xl bg-surface-container-lowest shadow-tonal-lg">
+          <p className="label-eyebrow px-4 pt-4">Protocolos a que está associado</p>
+          <ul className="mt-2 max-h-[60vh] overflow-y-auto pb-2">
+            {protocolos.map((p) => {
+              const isActive = p.id === activeId;
+              return (
+                <li key={p.id}>
+                  <button
+                    onClick={() => {
+                      setActiveId(p.id);
+                      setOpen(false);
+                    }}
+                    className={
+                      isActive
+                        ? "flex w-full items-start gap-3 bg-primary/10 px-4 py-3 text-left"
+                        : "flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-container-high"
+                    }
+                  >
+                    <ShieldCheck className={isActive ? "h-4 w-4 flex-none text-primary" : "h-4 w-4 flex-none text-on-surface-variant"} />
+                    <div className="min-w-0 flex-1">
+                      <p className={isActive ? "truncate text-sm font-bold text-primary" : "truncate text-sm font-semibold text-on-surface"}>
+                        {p.nome}
+                      </p>
+                      <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
+                        {p.estado === "ativo" ? "Ativo" : "Inativo"}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

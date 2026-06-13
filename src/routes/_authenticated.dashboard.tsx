@@ -9,6 +9,7 @@ import { StatusChip } from "@/components/StatusChip";
 import { MeusPedidos } from "@/components/dashboard/MeusPedidos";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -21,11 +22,14 @@ interface ReservaRow {
   start_time: string;
   end_time: string;
   status: string;
+  user_id: string;
   posto: { code: string; name: string } | null;
+  autor?: { full_name: string | null; email: string } | null;
 }
 
 function Dashboard() {
   const { user, profile } = useAuth();
+  const { activeId, active } = useProtocolo();
   const [reservas, setReservas] = useState<ReservaRow[]>([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
 
@@ -38,25 +42,44 @@ function Dashboard() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("proximas");
 
   const loadReservas = async () => {
-    if (!user) return;
+    if (!user || !activeId) {
+      setReservas([]);
+      setLoadingReservas(false);
+      return;
+    }
+    setLoadingReservas(true);
     const { data, error } = await supabase
       .from("reservas")
-      .select("id, reserva_date, start_time, end_time, status, posto:postos(code, name)")
-      .eq("user_id", user.id)
+      .select("id, reserva_date, start_time, end_time, status, user_id, posto:postos(code, name)")
+      .eq("protocolo_id", activeId)
       .order("reserva_date", { ascending: false })
       .order("start_time", { ascending: false })
-      .limit(100);
+      .limit(200);
     if (error) {
       toast.error("Não foi possível carregar reservas");
-    } else {
-      setReservas((data ?? []) as unknown as ReservaRow[]);
+      setLoadingReservas(false);
+      return;
     }
+    const rows = (data ?? []) as unknown as ReservaRow[];
+    const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      const m = new Map((profs ?? []).map((p) => [p.id, p]));
+      rows.forEach((r) => {
+        const p = m.get(r.user_id);
+        r.autor = p ? { full_name: p.full_name, email: p.email } : null;
+      });
+    }
+    setReservas(rows);
     setLoadingReservas(false);
   };
 
   useEffect(() => {
     void loadReservas();
-  }, [user?.id]);
+  }, [user?.id, activeId]);
 
   // Default sort by tab: passadas → mais recentes, restantes → mais próximas
   useEffect(() => {
@@ -129,10 +152,17 @@ function Dashboard() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="label-eyebrow">Dashboard de Investigação</p>
+            <p className="label-eyebrow">
+              {active ? `Protocolo · ${active.nome}` : "Dashboard de Investigação"}
+            </p>
             <h1 className="mt-2 font-display text-4xl font-extrabold text-on-surface">
               Bem-vindo, {displayName}
             </h1>
+            {active && (
+              <p className="mt-2 text-sm text-on-surface-variant">
+                A ver dados do protocolo <span className="font-semibold text-on-surface">{active.nome}</span>. Use o seletor no topo para mudar.
+              </p>
+            )}
           </div>
           <div className="flex gap-3">
             <Link
@@ -172,7 +202,9 @@ function Dashboard() {
         {/* Reservas com tabs + filtro */}
         <section className="mt-10 rounded-3xl bg-surface-container-low p-8">
           <header className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="font-display text-xl font-bold text-on-surface">As Minhas Reservas</h2>
+            <h2 className="font-display text-xl font-bold text-on-surface">
+              Reservas {active ? `· ${active.nome}` : ""}
+            </h2>
             <Link to="/agendamentos" className="text-xs font-semibold text-primary hover:underline">
               Ver agendamentos →
             </Link>
@@ -340,6 +372,11 @@ function Dashboard() {
                           {r.posto?.name ?? "Posto"}
                         </p>
                         <p className="font-mono text-xs text-on-surface-variant">#{r.posto?.code}</p>
+                        {r.user_id !== user?.id && (
+                          <p className="mt-1 text-[0.6875rem] font-semibold text-tertiary">
+                            por {r.autor?.full_name || r.autor?.email || "colega"}
+                          </p>
+                        )}
                       </div>
                       <div className="col-span-3 text-on-surface-variant">
                         {format(parseISO(r.reserva_date), "d 'de' MMM 'de' yyyy", { locale: pt })}
@@ -359,7 +396,7 @@ function Dashboard() {
                         )}
                       </div>
                       <div className="col-span-1 flex justify-end">
-                        {!cancelled && !isPast ? (
+                        {!cancelled && !isPast && r.user_id === user?.id ? (
                           <button
                             onClick={() => cancelReserva(r.id)}
                             title="Cancelar reserva"

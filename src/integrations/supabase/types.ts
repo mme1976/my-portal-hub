@@ -129,6 +129,7 @@ export type Database = {
           descricao: string
           finalidade: string
           id: string
+          protocolo_id: string | null
           status: Database["public"]["Enums"]["pedido_status"]
           titulo_estudo: string
           updated_at: string
@@ -140,6 +141,7 @@ export type Database = {
           descricao: string
           finalidade: string
           id?: string
+          protocolo_id?: string | null
           status?: Database["public"]["Enums"]["pedido_status"]
           titulo_estudo: string
           updated_at?: string
@@ -151,12 +153,21 @@ export type Database = {
           descricao?: string
           finalidade?: string
           id?: string
+          protocolo_id?: string | null
           status?: Database["public"]["Enums"]["pedido_status"]
           titulo_estudo?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_dataset_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pedidos_historico: {
         Row: {
@@ -279,6 +290,35 @@ export type Database = {
           },
         ]
       }
+      protocolo_membros: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          protocolo_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          protocolo_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          protocolo_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_membros_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       protocolos: {
         Row: {
           created_at: string
@@ -331,6 +371,7 @@ export type Database = {
           id: string
           notes: string | null
           posto_id: string
+          protocolo_id: string | null
           reserva_date: string
           start_time: string
           status: Database["public"]["Enums"]["reserva_status"]
@@ -343,6 +384,7 @@ export type Database = {
           id?: string
           notes?: string | null
           posto_id: string
+          protocolo_id?: string | null
           reserva_date: string
           start_time: string
           status?: Database["public"]["Enums"]["reserva_status"]
@@ -355,6 +397,7 @@ export type Database = {
           id?: string
           notes?: string | null
           posto_id?: string
+          protocolo_id?: string | null
           reserva_date?: string
           start_time?: string
           status?: Database["public"]["Enums"]["reserva_status"]
@@ -367,6 +410,13 @@ export type Database = {
             columns: ["posto_id"]
             isOneToOne: false
             referencedRelation: "postos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
             referencedColumns: ["id"]
           },
         ]
@@ -402,6 +452,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_protocolo_member: {
+        Args: { _protocolo_id: string; _user_id: string }
         Returns: boolean
       }
     }

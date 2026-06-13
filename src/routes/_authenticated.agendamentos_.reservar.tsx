@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 
 export const Route = createFileRoute("/_authenticated/agendamentos_/reservar")({
   component: ReservarPage,
@@ -35,6 +36,7 @@ const slots = [
 function ReservarPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { active } = useProtocolo();
   const [postos, setPostos] = useState<Posto[]>([]);
   const [selectedPosto, setSelectedPosto] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -105,6 +107,10 @@ function ReservarPage() {
       toast.error("Selecione posto, data e pelo menos um bloco horário");
       return;
     }
+    if (!active) {
+      toast.error("Selecione um protocolo no topo da página antes de reservar");
+      return;
+    }
     setSubmitting(true);
 
     // Group consecutive slots into single reservas
@@ -129,6 +135,7 @@ function ReservarPage() {
     const inserts = groups.map((g) => ({
       posto_id: selectedPosto,
       user_id: user.id,
+      protocolo_id: active.id,
       reserva_date: dateStr,
       start_time: g.start,
       end_time: g.end,

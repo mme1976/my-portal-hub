@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 
 export const Route = createFileRoute("/_authenticated/pedidos/novo")({
   component: NovoPedido,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/pedidos/novo")({
 function NovoPedido() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { active, protocolos } = useProtocolo();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [dadosPretendidos, setDadosPretendidos] = useState("");
@@ -23,6 +25,10 @@ function NovoPedido() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!active) {
+      toast.error("Selecione um protocolo no topo da página antes de submeter");
+      return;
+    }
     if (!titulo.trim() || !descricao.trim() || !dadosPretendidos.trim() || !finalidade.trim()) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
@@ -33,6 +39,7 @@ function NovoPedido() {
         .from("pedidos_dataset")
         .insert({
           user_id: user.id,
+          protocolo_id: active.id,
           titulo_estudo: titulo.trim(),
           descricao: descricao.trim(),
           dados_pretendidos: dadosPretendidos.trim(),
@@ -79,6 +86,20 @@ function NovoPedido() {
             Submeta o seu protocolo de investigação para avaliação. Após aprovação, o acesso
             aos microdados é feito presencialmente no Safe Centre — os dados nunca circulam pelo portal.
           </p>
+          {active ? (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary-container px-3 py-1.5 text-xs font-semibold text-on-primary-container">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              A submeter no protocolo: {active.nome}
+            </p>
+          ) : protocolos.length > 0 ? (
+            <p className="mt-3 inline-flex rounded-full bg-warning-container px-3 py-1.5 text-xs font-semibold text-on-warning-container">
+              Selecione um protocolo no topo da página antes de submeter.
+            </p>
+          ) : (
+            <p className="mt-3 inline-flex rounded-full bg-error-container px-3 py-1.5 text-xs font-semibold text-on-error-container">
+              Não está associado a nenhum protocolo. Contacte a administração.
+            </p>
+          )}
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">

@@ -81,12 +81,17 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
         })
         .eq("id", userId);
       if (error) throw error;
+      const { error: mErr } = await supabase
+        .from("protocolo_membros")
+        .insert({ user_id: userId, protocolo_id: protocoloId, created_by: adminUserId });
+      if (mErr && mErr.code !== "23505") throw mErr;
     },
     onSuccess: () => {
       toast.success("Conta aprovada e associada ao protocolo");
       setApprovingId(null);
       setApproveProtocoloId("");
       void qc.invalidateQueries({ queryKey: ["admin", "profiles-with-status"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores"] });
     },
     onError: (e: Error) => toast.error("Falha ao aprovar", { description: e.message }),
   });
