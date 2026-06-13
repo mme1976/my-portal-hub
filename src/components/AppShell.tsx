@@ -11,9 +11,11 @@ import {
   LogOut,
   Search,
   HelpCircle,
+  ChevronDown,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useProtocolo } from "@/lib/auth/protocolo-context";
 import logoUrl from "@/assets/dgeec-logo.png";
 
 const baseNav = [
