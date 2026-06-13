@@ -22,11 +22,14 @@ interface ReservaRow {
   start_time: string;
   end_time: string;
   status: string;
+  user_id: string;
   posto: { code: string; name: string } | null;
+  autor?: { full_name: string | null; email: string } | null;
 }
 
 function Dashboard() {
   const { user, profile } = useAuth();
+  const { activeId, active } = useProtocolo();
   const [reservas, setReservas] = useState<ReservaRow[]>([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
 
@@ -39,25 +42,44 @@ function Dashboard() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("proximas");
 
   const loadReservas = async () => {
-    if (!user) return;
+    if (!user || !activeId) {
+      setReservas([]);
+      setLoadingReservas(false);
+      return;
+    }
+    setLoadingReservas(true);
     const { data, error } = await supabase
       .from("reservas")
-      .select("id, reserva_date, start_time, end_time, status, posto:postos(code, name)")
-      .eq("user_id", user.id)
+      .select("id, reserva_date, start_time, end_time, status, user_id, posto:postos(code, name)")
+      .eq("protocolo_id", activeId)
       .order("reserva_date", { ascending: false })
       .order("start_time", { ascending: false })
-      .limit(100);
+      .limit(200);
     if (error) {
       toast.error("Não foi possível carregar reservas");
-    } else {
-      setReservas((data ?? []) as unknown as ReservaRow[]);
+      setLoadingReservas(false);
+      return;
     }
+    const rows = (data ?? []) as unknown as ReservaRow[];
+    const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      const m = new Map((profs ?? []).map((p) => [p.id, p]));
+      rows.forEach((r) => {
+        const p = m.get(r.user_id);
+        r.autor = p ? { full_name: p.full_name, email: p.email } : null;
+      });
+    }
+    setReservas(rows);
     setLoadingReservas(false);
   };
 
   useEffect(() => {
     void loadReservas();
-  }, [user?.id]);
+  }, [user?.id, activeId]);
 
   // Default sort by tab: passadas → mais recentes, restantes → mais próximas
   useEffect(() => {
