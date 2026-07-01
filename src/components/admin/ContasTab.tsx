@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, Check, X, UserCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Search, Check, X, UserCheck, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusChip } from "@/components/StatusChip";
+import { setInvestigadorProtocolos } from "@/lib/admin-users.functions";
 
 type AccountStatus = "pendente" | "aprovado" | "rejeitado";
 
