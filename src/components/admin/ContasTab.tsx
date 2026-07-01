@@ -70,6 +70,17 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
     },
   });
 
+  const membershipsQ = useQuery({
+    queryKey: ["admin", "all-memberships"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("protocolo_membros")
+        .select("user_id, protocolo_id");
+      if (error) throw error;
+      return (data ?? []) as { user_id: string; protocolo_id: string }[];
+    },
+  });
+
   const approveMut = useMutation({
     mutationFn: async ({ userId, protocoloId }: { userId: string; protocoloId: string }) => {
       if (!adminUserId) throw new Error("Sessão inválida");
