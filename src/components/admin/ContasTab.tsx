@@ -234,7 +234,10 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
         ) : (
           <ul className="space-y-2">
             {filtered.map((p) => {
-              const proto = p.protocolo_id ? protocoloMap.get(p.protocolo_id) : null;
+              const memberIds = membershipsByUser.get(p.id) ?? [];
+              const memberProtos = memberIds
+                .map((id) => protocoloMap.get(id))
+                .filter((x): x is ProtocoloLookup => !!x);
               return (
                 <li
                   key={p.id}
@@ -253,10 +256,21 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
                         <p className="mt-1 text-xs text-on-surface-variant">
                           {p.institution ?? "Sem instituição"} · {p.position ?? "Investigador"}
                         </p>
-                        {proto && (
-                          <p className="mt-1 text-xs text-primary">
-                            Protocolo: <span className="font-semibold">{proto.nome}</span>
-                          </p>
+                        {p.account_status === "aprovado" && (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {memberProtos.length === 0 ? (
+                              <span className="text-xs text-warning">Sem protocolos associados</span>
+                            ) : (
+                              memberProtos.map((mp) => (
+                                <span
+                                  key={mp.id}
+                                  className="rounded-full bg-primary-container px-2.5 py-0.5 text-[0.6875rem] font-semibold text-on-primary-container"
+                                >
+                                  {mp.nome}
+                                </span>
+                              ))
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -264,8 +278,27 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
                       <StatusChip tone={STATUS_TONE[p.account_status]} dot>
                         {STATUS_LABEL[p.account_status]}
                       </StatusChip>
+                      {p.account_status === "aprovado" && (
+                        <button
+                          onClick={() => setManagingId(managingId === p.id ? null : p.id)}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface hover:opacity-90"
+                        >
+                          <Settings2 className="h-3.5 w-3.5" />
+                          Gerir protocolos
+                        </button>
+                      )}
                     </div>
                   </div>
+                  {managingId === p.id && p.account_status === "aprovado" && (
+                    <ManageProtocolosPanel
+                      userId={p.id}
+                      protocolos={protocolosQ.data ?? []}
+                      currentIds={memberIds}
+                      onCancel={() => setManagingId(null)}
+                      onSave={(ids) => setMembershipsMut.mutate({ userId: p.id, protocoloIds: ids })}
+                      isSaving={setMembershipsMut.isPending}
+                    />
+                  )}
                   {p.motivo_rejeicao && p.account_status === "rejeitado" && (
                     <p className="mt-3 rounded-lg bg-error-container/40 p-3 text-xs text-on-error-container">
                       <strong>Motivo:</strong> {p.motivo_rejeicao}
