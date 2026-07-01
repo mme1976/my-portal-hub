@@ -16,7 +16,11 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusChip } from "@/components/StatusChip";
-import { createInvestigadorForProtocolo } from "@/lib/admin-users.functions";
+import {
+  createInvestigadorForProtocolo,
+  addExistingInvestigadorToProtocolo,
+  removeInvestigadorFromProtocolo,
+} from "@/lib/admin-users.functions";
 
 type ProtocoloEstado = "ativo" | "inativo";
 
@@ -324,13 +328,42 @@ function ProtocoloDrawer({
 }) {
   const qc = useQueryClient();
   const createInvestigador = useServerFn(createInvestigadorForProtocolo);
+  const addExisting = useServerFn(addExistingInvestigadorToProtocolo);
+  const removeMember = useServerFn(removeInvestigadorFromProtocolo);
   const [showInv, setShowInv] = useState(false);
+  const [showAddExisting, setShowAddExisting] = useState(false);
+  const [existingEmail, setExistingEmail] = useState("");
   const [inv, setInv] = useState({
     fullName: "",
     email: "",
     password: "",
     institution: "",
     position: "Investigador",
+  });
+
+  const addExistingMut = useMutation({
+    mutationFn: async () => {
+      if (!existingEmail.trim()) throw new Error("Indique o email");
+      return await addExisting({ data: { email: existingEmail.trim(), protocoloId: protocolo.id } });
+    },
+    onSuccess: () => {
+      toast.success("Investigador adicionado ao protocolo");
+      setExistingEmail("");
+      setShowAddExisting(false);
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores", protocolo.id] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
+  });
+
+  const removeMut = useMutation({
+    mutationFn: async (userId: string) => {
+      return await removeMember({ data: { userId, protocoloId: protocolo.id } });
+    },
+    onSuccess: () => {
+      toast.success("Investigador removido do protocolo");
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores", protocolo.id] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
   });
 
   const investigadoresQ = useQuery({
