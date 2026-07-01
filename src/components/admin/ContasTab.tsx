@@ -420,3 +420,81 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
     </div>
   );
 }
+
+function ManageProtocolosPanel({
+  userId,
+  protocolos,
+  currentIds,
+  onCancel,
+  onSave,
+  isSaving,
+}: {
+  userId: string;
+  protocolos: ProtocoloLookup[];
+  currentIds: string[];
+  onCancel: () => void;
+  onSave: (ids: string[]) => void;
+  isSaving: boolean;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(currentIds));
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  return (
+    <div className="mt-4 rounded-xl bg-surface-container-low p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+        Selecionar protocolos para este investigador
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {protocolos.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">Sem protocolos criados.</p>
+        ) : (
+          protocolos.map((p) => (
+            <label
+              key={p.id}
+              className="flex cursor-pointer items-center gap-2 rounded-lg bg-surface-container-lowest p-2.5 text-sm text-on-surface hover:bg-surface-container"
+            >
+              <input
+                type="checkbox"
+                checked={selected.has(p.id)}
+                onChange={() => toggle(p.id)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="flex-1 truncate">{p.nome}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[0.625rem] font-semibold ${
+                  p.estado === "ativo"
+                    ? "bg-success-container text-on-success-container"
+                    : "bg-surface-container-high text-on-surface-variant"
+                }`}
+              >
+                {p.estado}
+              </span>
+            </label>
+          ))
+        )}
+      </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="rounded-md px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => onSave(Array.from(selected))}
+          disabled={isSaving}
+          className="rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+        >
+          {isSaving ? "A guardar…" : "Guardar associações"}
+        </button>
+      </div>
+      <p className="sr-only">{userId}</p>
+    </div>
+  );
+}
