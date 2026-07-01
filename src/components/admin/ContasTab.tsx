@@ -37,12 +37,14 @@ const STATUS_TONE: Record<AccountStatus, "warning" | "success" | "error"> = {
 
 export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) {
   const qc = useQueryClient();
+  const setMemberships = useServerFn(setInvestigadorProtocolos);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AccountStatus | "todos">("pendente");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [approveProtocoloId, setApproveProtocoloId] = useState<string>("");
+  const [managingId, setManagingId] = useState<string | null>(null);
 
   const profilesQ = useQuery({
     queryKey: ["admin", "profiles-with-status"],
