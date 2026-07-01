@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, Check, X, UserCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Search, Check, X, UserCheck, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusChip } from "@/components/StatusChip";
+import { setInvestigadorProtocolos } from "@/lib/admin-users.functions";
 
 type AccountStatus = "pendente" | "aprovado" | "rejeitado";
 
@@ -35,12 +37,14 @@ const STATUS_TONE: Record<AccountStatus, "warning" | "success" | "error"> = {
 
 export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) {
   const qc = useQueryClient();
+  const setMemberships = useServerFn(setInvestigadorProtocolos);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AccountStatus | "todos">("pendente");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [approveProtocoloId, setApproveProtocoloId] = useState<string>("");
+  const [managingId, setManagingId] = useState<string | null>(null);
 
   const profilesQ = useQuery({
     queryKey: ["admin", "profiles-with-status"],
@@ -63,6 +67,17 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
         .order("nome");
       if (error) throw error;
       return (data ?? []) as ProtocoloLookup[];
+    },
+  });
+
+  const membershipsQ = useQuery({
+    queryKey: ["admin", "all-memberships"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("protocolo_membros")
+        .select("user_id, protocolo_id");
+      if (error) throw error;
+      return (data ?? []) as { user_id: string; protocolo_id: string }[];
     },
   });
 
@@ -123,6 +138,29 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
     () => (protocolosQ.data ?? []).filter((p) => p.estado === "ativo"),
     [protocolosQ.data],
   );
+
+  const membershipsByUser = useMemo(() => {
+    const m = new Map<string, string[]>();
+    (membershipsQ.data ?? []).forEach((r) => {
+      const arr = m.get(r.user_id) ?? [];
+      arr.push(r.protocolo_id);
+      m.set(r.user_id, arr);
+    });
+    return m;
+  }, [membershipsQ.data]);
+
+  const setMembershipsMut = useMutation({
+    mutationFn: async ({ userId, protocoloIds }: { userId: string; protocoloIds: string[] }) => {
+      return await setMemberships({ data: { userId, protocoloIds } });
+    },
+    onSuccess: () => {
+      toast.success("Associações atualizadas");
+      setManagingId(null);
+      void qc.invalidateQueries({ queryKey: ["admin", "all-memberships"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores"] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
+  });
 
   const filtered = useMemo(() => {
     const all = profilesQ.data ?? [];
@@ -196,7 +234,10 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
         ) : (
           <ul className="space-y-2">
             {filtered.map((p) => {
-              const proto = p.protocolo_id ? protocoloMap.get(p.protocolo_id) : null;
+              const memberIds = membershipsByUser.get(p.id) ?? [];
+              const memberProtos = memberIds
+                .map((id) => protocoloMap.get(id))
+                .filter((x): x is ProtocoloLookup => !!x);
               return (
                 <li
                   key={p.id}
@@ -215,10 +256,21 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
                         <p className="mt-1 text-xs text-on-surface-variant">
                           {p.institution ?? "Sem instituição"} · {p.position ?? "Investigador"}
                         </p>
-                        {proto && (
-                          <p className="mt-1 text-xs text-primary">
-                            Protocolo: <span className="font-semibold">{proto.nome}</span>
-                          </p>
+                        {p.account_status === "aprovado" && (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {memberProtos.length === 0 ? (
+                              <span className="text-xs text-warning">Sem protocolos associados</span>
+                            ) : (
+                              memberProtos.map((mp) => (
+                                <span
+                                  key={mp.id}
+                                  className="rounded-full bg-primary-container px-2.5 py-0.5 text-[0.6875rem] font-semibold text-on-primary-container"
+                                >
+                                  {mp.nome}
+                                </span>
+                              ))
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -226,8 +278,27 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
                       <StatusChip tone={STATUS_TONE[p.account_status]} dot>
                         {STATUS_LABEL[p.account_status]}
                       </StatusChip>
+                      {p.account_status === "aprovado" && (
+                        <button
+                          onClick={() => setManagingId(managingId === p.id ? null : p.id)}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface hover:opacity-90"
+                        >
+                          <Settings2 className="h-3.5 w-3.5" />
+                          Gerir protocolos
+                        </button>
+                      )}
                     </div>
                   </div>
+                  {managingId === p.id && p.account_status === "aprovado" && (
+                    <ManageProtocolosPanel
+                      userId={p.id}
+                      protocolos={protocolosQ.data ?? []}
+                      currentIds={memberIds}
+                      onCancel={() => setManagingId(null)}
+                      onSave={(ids) => setMembershipsMut.mutate({ userId: p.id, protocoloIds: ids })}
+                      isSaving={setMembershipsMut.isPending}
+                    />
+                  )}
                   {p.motivo_rejeicao && p.account_status === "rejeitado" && (
                     <p className="mt-3 rounded-lg bg-error-container/40 p-3 text-xs text-on-error-container">
                       <strong>Motivo:</strong> {p.motivo_rejeicao}
@@ -346,6 +417,84 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
           </ul>
         )}
       </div>
+    </div>
+  );
+}
+
+function ManageProtocolosPanel({
+  userId,
+  protocolos,
+  currentIds,
+  onCancel,
+  onSave,
+  isSaving,
+}: {
+  userId: string;
+  protocolos: ProtocoloLookup[];
+  currentIds: string[];
+  onCancel: () => void;
+  onSave: (ids: string[]) => void;
+  isSaving: boolean;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(currentIds));
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  return (
+    <div className="mt-4 rounded-xl bg-surface-container-low p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+        Selecionar protocolos para este investigador
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {protocolos.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">Sem protocolos criados.</p>
+        ) : (
+          protocolos.map((p) => (
+            <label
+              key={p.id}
+              className="flex cursor-pointer items-center gap-2 rounded-lg bg-surface-container-lowest p-2.5 text-sm text-on-surface hover:bg-surface-container"
+            >
+              <input
+                type="checkbox"
+                checked={selected.has(p.id)}
+                onChange={() => toggle(p.id)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="flex-1 truncate">{p.nome}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[0.625rem] font-semibold ${
+                  p.estado === "ativo"
+                    ? "bg-success-container text-on-success-container"
+                    : "bg-surface-container-high text-on-surface-variant"
+                }`}
+              >
+                {p.estado}
+              </span>
+            </label>
+          ))
+        )}
+      </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="rounded-md px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => onSave(Array.from(selected))}
+          disabled={isSaving}
+          className="rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+        >
+          {isSaving ? "A guardar…" : "Guardar associações"}
+        </button>
+      </div>
+      <p className="sr-only">{userId}</p>
     </div>
   );
 }

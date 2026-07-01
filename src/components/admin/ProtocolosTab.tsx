@@ -16,7 +16,11 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusChip } from "@/components/StatusChip";
-import { createInvestigadorForProtocolo } from "@/lib/admin-users.functions";
+import {
+  createInvestigadorForProtocolo,
+  addExistingInvestigadorToProtocolo,
+  removeInvestigadorFromProtocolo,
+} from "@/lib/admin-users.functions";
 
 type ProtocoloEstado = "ativo" | "inativo";
 
@@ -324,13 +328,42 @@ function ProtocoloDrawer({
 }) {
   const qc = useQueryClient();
   const createInvestigador = useServerFn(createInvestigadorForProtocolo);
+  const addExisting = useServerFn(addExistingInvestigadorToProtocolo);
+  const removeMember = useServerFn(removeInvestigadorFromProtocolo);
   const [showInv, setShowInv] = useState(false);
+  const [showAddExisting, setShowAddExisting] = useState(false);
+  const [existingEmail, setExistingEmail] = useState("");
   const [inv, setInv] = useState({
     fullName: "",
     email: "",
     password: "",
     institution: "",
     position: "Investigador",
+  });
+
+  const addExistingMut = useMutation({
+    mutationFn: async () => {
+      if (!existingEmail.trim()) throw new Error("Indique o email");
+      return await addExisting({ data: { email: existingEmail.trim(), protocoloId: protocolo.id } });
+    },
+    onSuccess: () => {
+      toast.success("Investigador adicionado ao protocolo");
+      setExistingEmail("");
+      setShowAddExisting(false);
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores", protocolo.id] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
+  });
+
+  const removeMut = useMutation({
+    mutationFn: async (userId: string) => {
+      return await removeMember({ data: { userId, protocoloId: protocolo.id } });
+    },
+    onSuccess: () => {
+      toast.success("Investigador removido do protocolo");
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores", protocolo.id] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
   });
 
   const investigadoresQ = useQuery({
@@ -466,13 +499,55 @@ function ProtocoloDrawer({
                 </h4>
               </div>
               <button
-                onClick={() => setShowInv((v) => !v)}
+                onClick={() => {
+                  setShowAddExisting((v) => !v);
+                  setShowInv(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Adicionar existente
+              </button>
+              <button
+                onClick={() => {
+                  setShowInv((v) => !v);
+                  setShowAddExisting(false);
+                }}
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary"
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                Novo
+                Nova conta
               </button>
             </div>
+
+            {showAddExisting && (
+              <div className="mt-4 space-y-3 rounded-xl bg-surface-container-lowest p-4">
+                <Field label="Email do investigador já existente *">
+                  <input
+                    type="email"
+                    value={existingEmail}
+                    onChange={(e) => setExistingEmail(e.target.value)}
+                    className={inputCls}
+                    placeholder="investigador@exemplo.pt"
+                  />
+                </Field>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => addExistingMut.mutate()}
+                    disabled={addExistingMut.isPending}
+                    className="rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+                  >
+                    {addExistingMut.isPending ? "A associar…" : "Associar"}
+                  </button>
+                  <button
+                    onClick={() => setShowAddExisting(false)}
+                    className="rounded-md px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
 
             {showInv && (
               <div className="mt-4 space-y-3 rounded-xl bg-surface-container-lowest p-4">
@@ -558,6 +633,18 @@ function ProtocoloDrawer({
                           {u.email} · {u.position ?? "Investigador"}
                         </p>
                       </div>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Remover ${u.full_name || u.email} deste protocolo?`)) {
+                            removeMut.mutate(u.id);
+                          }
+                        }}
+                        disabled={removeMut.isPending}
+                        className="flex h-8 w-8 flex-none items-center justify-center rounded-md text-on-surface-variant hover:bg-error-container hover:text-on-error-container disabled:opacity-50"
+                        title="Remover do protocolo"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </li>
                   ))}
                 </ul>
