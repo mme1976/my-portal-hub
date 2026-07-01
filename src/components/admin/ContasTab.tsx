@@ -139,6 +139,29 @@ export function ContasTab({ adminUserId }: { adminUserId: string | undefined }) 
     [protocolosQ.data],
   );
 
+  const membershipsByUser = useMemo(() => {
+    const m = new Map<string, string[]>();
+    (membershipsQ.data ?? []).forEach((r) => {
+      const arr = m.get(r.user_id) ?? [];
+      arr.push(r.protocolo_id);
+      m.set(r.user_id, arr);
+    });
+    return m;
+  }, [membershipsQ.data]);
+
+  const setMembershipsMut = useMutation({
+    mutationFn: async ({ userId, protocoloIds }: { userId: string; protocoloIds: string[] }) => {
+      return await setMemberships({ data: { userId, protocoloIds } });
+    },
+    onSuccess: () => {
+      toast.success("Associações atualizadas");
+      setManagingId(null);
+      void qc.invalidateQueries({ queryKey: ["admin", "all-memberships"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "protocolo-investigadores"] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
+  });
+
   const filtered = useMemo(() => {
     const all = profilesQ.data ?? [];
     return all.filter((p) => {
