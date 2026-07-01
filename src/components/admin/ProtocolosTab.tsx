@@ -499,13 +499,55 @@ function ProtocoloDrawer({
                 </h4>
               </div>
               <button
-                onClick={() => setShowInv((v) => !v)}
+                onClick={() => {
+                  setShowAddExisting((v) => !v);
+                  setShowInv(false);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-high px-3 py-1.5 text-xs font-semibold text-on-surface"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Adicionar existente
+              </button>
+              <button
+                onClick={() => {
+                  setShowInv((v) => !v);
+                  setShowAddExisting(false);
+                }}
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary"
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                Novo
+                Nova conta
               </button>
             </div>
+
+            {showAddExisting && (
+              <div className="mt-4 space-y-3 rounded-xl bg-surface-container-lowest p-4">
+                <Field label="Email do investigador já existente *">
+                  <input
+                    type="email"
+                    value={existingEmail}
+                    onChange={(e) => setExistingEmail(e.target.value)}
+                    className={inputCls}
+                    placeholder="investigador@exemplo.pt"
+                  />
+                </Field>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => addExistingMut.mutate()}
+                    disabled={addExistingMut.isPending}
+                    className="rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+                  >
+                    {addExistingMut.isPending ? "A associar…" : "Associar"}
+                  </button>
+                  <button
+                    onClick={() => setShowAddExisting(false)}
+                    className="rounded-md px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
 
             {showInv && (
               <div className="mt-4 space-y-3 rounded-xl bg-surface-container-lowest p-4">
@@ -591,6 +633,18 @@ function ProtocoloDrawer({
                           {u.email} · {u.position ?? "Investigador"}
                         </p>
                       </div>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Remover ${u.full_name || u.email} deste protocolo?`)) {
+                            removeMut.mutate(u.id);
+                          }
+                        }}
+                        disabled={removeMut.isPending}
+                        className="flex h-8 w-8 flex-none items-center justify-center rounded-md text-on-surface-variant hover:bg-error-container hover:text-on-error-container disabled:opacity-50"
+                        title="Remover do protocolo"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </li>
                   ))}
                 </ul>
