@@ -7,6 +7,7 @@ export interface ProtocoloLite {
   id: string;
   nome: string;
   estado: "ativo" | "inativo";
+  data_terminus: string | null;
 }
 
 interface ProtocoloCtxValue {
@@ -14,6 +15,8 @@ interface ProtocoloCtxValue {
   protocolos: ProtocoloLite[];
   activeId: string | null;
   active: ProtocoloLite | null;
+  /** true quando o protocolo ativo tem estado='ativo' e não expirou (data_terminus>=hoje ou nula). */
+  isActiveProtocoloUsable: boolean;
   setActiveId: (id: string) => void;
   refresh: () => Promise<void>;
 }
