@@ -122,6 +122,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pedido_ficheiros_finais: {
+        Row: {
+          descricao: string | null
+          filename: string
+          id: string
+          mime_type: string | null
+          pedido_id: string
+          protocolo_id: string | null
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          descricao?: string | null
+          filename: string
+          id?: string
+          mime_type?: string | null
+          pedido_id: string
+          protocolo_id?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          descricao?: string | null
+          filename?: string
+          id?: string
+          mime_type?: string | null
+          pedido_id?: string
+          protocolo_id?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_ficheiros_finais_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos_dataset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_ficheiros_finais_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos_dataset: {
         Row: {
           created_at: string
@@ -290,6 +344,50 @@ export type Database = {
           },
         ]
       }
+      protocolo_documentos: {
+        Row: {
+          descricao: string | null
+          filename: string
+          id: string
+          mime_type: string | null
+          protocolo_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          descricao?: string | null
+          filename: string
+          id?: string
+          mime_type?: string | null
+          protocolo_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          descricao?: string | null
+          filename?: string
+          id?: string
+          mime_type?: string | null
+          protocolo_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_documentos_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       protocolo_membros: {
         Row: {
           created_at: string
@@ -324,6 +422,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_assinatura: string
+          data_terminus: string | null
           estado: Database["public"]["Enums"]["protocolo_estado"]
           finalidade: string
           id: string
@@ -338,6 +437,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_assinatura: string
+          data_terminus?: string | null
           estado?: Database["public"]["Enums"]["protocolo_estado"]
           finalidade: string
           id?: string
@@ -352,6 +452,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_assinatura?: string
+          data_terminus?: string | null
           estado?: Database["public"]["Enums"]["protocolo_estado"]
           finalidade?: string
           id?: string
@@ -454,6 +555,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_protocolo_ativo: { Args: { _protocolo_id: string }; Returns: boolean }
       is_protocolo_member: {
         Args: { _protocolo_id: string; _user_id: string }
         Returns: boolean
