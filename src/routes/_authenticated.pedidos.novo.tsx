@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/pedidos/novo")({
 function NovoPedido() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { active, protocolos } = useProtocolo();
+  const { active, protocolos, isActiveProtocoloUsable } = useProtocolo();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [dadosPretendidos, setDadosPretendidos] = useState("");
@@ -27,6 +27,10 @@ function NovoPedido() {
     if (!user) return;
     if (!active) {
       toast.error("Selecione um protocolo no topo da página antes de submeter");
+      return;
+    }
+    if (!isActiveProtocoloUsable) {
+      toast.error("Este protocolo está inativo ou expirado. Não é possível submeter pedidos.");
       return;
     }
     if (!titulo.trim() || !descricao.trim() || !dadosPretendidos.trim() || !finalidade.trim()) {
