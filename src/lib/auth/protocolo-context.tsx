@@ -7,6 +7,7 @@ export interface ProtocoloLite {
   id: string;
   nome: string;
   estado: "ativo" | "inativo";
+  data_terminus: string | null;
 }
 
 interface ProtocoloCtxValue {
@@ -14,6 +15,8 @@ interface ProtocoloCtxValue {
   protocolos: ProtocoloLite[];
   activeId: string | null;
   active: ProtocoloLite | null;
+  /** true quando o protocolo ativo tem estado='ativo' e não expirou (data_terminus>=hoje ou nula). */
+  isActiveProtocoloUsable: boolean;
   setActiveId: (id: string) => void;
   refresh: () => Promise<void>;
 }
@@ -34,14 +37,14 @@ export function ProtocoloProvider({ children }: { children: ReactNode }) {
       if (isAdmin) {
         const { data, error } = await supabase
           .from("protocolos")
-          .select("id, nome, estado")
+          .select("id, nome, estado, data_terminus")
           .order("nome");
         if (error) throw error;
         return (data ?? []) as ProtocoloLite[];
       }
       const { data, error } = await supabase
         .from("protocolo_membros")
-        .select("protocolo:protocolos(id, nome, estado)")
+        .select("protocolo:protocolos(id, nome, estado, data_terminus)")
         .eq("user_id", user!.id);
       if (error) throw error;
       return ((data ?? []).map((r: any) => r.protocolo).filter(Boolean) as ProtocoloLite[]).sort(
@@ -72,19 +75,24 @@ export function ProtocoloProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.localStorage.setItem(LS_KEY, id);
   };
 
-  const value = useMemo<ProtocoloCtxValue>(
-    () => ({
+  const value = useMemo<ProtocoloCtxValue>(() => {
+    const active = protocolos.find((p) => p.id === activeId) ?? null;
+    const today = new Date().toISOString().slice(0, 10);
+    const isActiveProtocoloUsable = !!active
+      && active.estado === "ativo"
+      && (!active.data_terminus || active.data_terminus >= today);
+    return {
       loading: q.isLoading,
       protocolos,
       activeId,
-      active: protocolos.find((p) => p.id === activeId) ?? null,
+      active,
+      isActiveProtocoloUsable,
       setActiveId,
       refresh: async () => {
         await q.refetch();
       },
-    }),
-    [q.isLoading, protocolos, activeId],
-  );
+    };
+  }, [q.isLoading, protocolos, activeId]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

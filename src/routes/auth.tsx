@@ -15,7 +15,7 @@ type Mode = "login" | "signup";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, hasRole } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,19 +25,35 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      void navigate({ to: "/dashboard" });
+      void navigate({ to: hasRole("admin") ? "/administracao" : "/dashboard" });
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, hasRole, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Sessão iniciada com sucesso");
-        void navigate({ to: "/dashboard" });
+        // Redireciona admins para /administracao, restantes para /dashboard
+        let target: "/administracao" | "/dashboard" = "/dashboard";
+        try {
+          const uid = signIn.user?.id;
+          if (uid) {
+            const { data: rolesData } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", uid);
+            if ((rolesData ?? []).some((r) => r.role === "admin")) {
+              target = "/administracao";
+            }
+          }
+        } catch {
+          // ignora — fallback para dashboard
+        }
+        void navigate({ to: target });
       } else {
         const redirectUrl = `${window.location.origin}/dashboard`;
         const { error } = await supabase.auth.signUp({

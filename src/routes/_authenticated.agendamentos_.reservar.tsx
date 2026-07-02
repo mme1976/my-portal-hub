@@ -36,7 +36,7 @@ const slots = [
 function ReservarPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { active } = useProtocolo();
+  const { active, isActiveProtocoloUsable } = useProtocolo();
   const [postos, setPostos] = useState<Posto[]>([]);
   const [selectedPosto, setSelectedPosto] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -109,6 +109,10 @@ function ReservarPage() {
     }
     if (!active) {
       toast.error("Selecione um protocolo no topo da página antes de reservar");
+      return;
+    }
+    if (!isActiveProtocoloUsable) {
+      toast.error("Este protocolo está inativo ou expirado. Não é possível criar reservas.");
       return;
     }
     setSubmitting(true);
