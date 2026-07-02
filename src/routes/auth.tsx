@@ -34,10 +34,26 @@ function AuthPage() {
     setSubmitting(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Sessão iniciada com sucesso");
-        void navigate({ to: "/dashboard" });
+        // Redireciona admins para /administracao, restantes para /dashboard
+        let target: "/administracao" | "/dashboard" = "/dashboard";
+        try {
+          const uid = signIn.user?.id;
+          if (uid) {
+            const { data: rolesData } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", uid);
+            if ((rolesData ?? []).some((r) => r.role === "admin")) {
+              target = "/administracao";
+            }
+          }
+        } catch {
+          // ignora — fallback para dashboard
+        }
+        void navigate({ to: target });
       } else {
         const redirectUrl = `${window.location.origin}/dashboard`;
         const { error } = await supabase.auth.signUp({
