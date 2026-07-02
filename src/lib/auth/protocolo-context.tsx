@@ -37,14 +37,14 @@ export function ProtocoloProvider({ children }: { children: ReactNode }) {
       if (isAdmin) {
         const { data, error } = await supabase
           .from("protocolos")
-          .select("id, nome, estado")
+          .select("id, nome, estado, data_terminus")
           .order("nome");
         if (error) throw error;
         return (data ?? []) as ProtocoloLite[];
       }
       const { data, error } = await supabase
         .from("protocolo_membros")
-        .select("protocolo:protocolos(id, nome, estado)")
+        .select("protocolo:protocolos(id, nome, estado, data_terminus)")
         .eq("user_id", user!.id);
       if (error) throw error;
       return ((data ?? []).map((r: any) => r.protocolo).filter(Boolean) as ProtocoloLite[]).sort(
