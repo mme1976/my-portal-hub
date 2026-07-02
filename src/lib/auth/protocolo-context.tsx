@@ -75,19 +75,24 @@ export function ProtocoloProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.localStorage.setItem(LS_KEY, id);
   };
 
-  const value = useMemo<ProtocoloCtxValue>(
-    () => ({
+  const value = useMemo<ProtocoloCtxValue>(() => {
+    const active = protocolos.find((p) => p.id === activeId) ?? null;
+    const today = new Date().toISOString().slice(0, 10);
+    const isActiveProtocoloUsable = !!active
+      && active.estado === "ativo"
+      && (!active.data_terminus || active.data_terminus >= today);
+    return {
       loading: q.isLoading,
       protocolos,
       activeId,
-      active: protocolos.find((p) => p.id === activeId) ?? null,
+      active,
+      isActiveProtocoloUsable,
       setActiveId,
       refresh: async () => {
         await q.refetch();
       },
-    }),
-    [q.isLoading, protocolos, activeId],
-  );
+    };
+  }, [q.isLoading, protocolos, activeId]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
