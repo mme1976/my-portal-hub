@@ -36,7 +36,7 @@ const slots = [
 function ReservarPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { active } = useProtocolo();
+  const { active, isActiveProtocoloUsable } = useProtocolo();
   const [postos, setPostos] = useState<Posto[]>([]);
   const [selectedPosto, setSelectedPosto] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
