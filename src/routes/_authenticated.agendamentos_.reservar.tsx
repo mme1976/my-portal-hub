@@ -111,6 +111,10 @@ function ReservarPage() {
       toast.error("Selecione um protocolo no topo da página antes de reservar");
       return;
     }
+    if (!isActiveProtocoloUsable) {
+      toast.error("Este protocolo está inativo ou expirado. Não é possível criar reservas.");
+      return;
+    }
     setSubmitting(true);
 
     // Group consecutive slots into single reservas
