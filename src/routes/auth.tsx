@@ -15,7 +15,7 @@ type Mode = "login" | "signup";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, hasRole } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,9 +25,9 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      void navigate({ to: "/dashboard" });
+      void navigate({ to: hasRole("admin") ? "/administracao" : "/dashboard" });
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, hasRole, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
