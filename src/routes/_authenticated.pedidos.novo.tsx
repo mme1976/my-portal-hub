@@ -91,10 +91,16 @@ function NovoPedido() {
             aos microdados é feito presencialmente no Safe Centre — os dados nunca circulam pelo portal.
           </p>
           {active ? (
-            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary-container px-3 py-1.5 text-xs font-semibold text-on-primary-container">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              A submeter no protocolo: {active.nome}
-            </p>
+            isActiveProtocoloUsable ? (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary-container px-3 py-1.5 text-xs font-semibold text-on-primary-container">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                A submeter no protocolo: {active.nome}
+              </p>
+            ) : (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-error-container px-3 py-1.5 text-xs font-semibold text-on-error-container">
+                Protocolo "{active.nome}" {active.estado === "inativo" ? "está inativo" : `expirou a ${active.data_terminus}`}. Só pode consultar informação — não é possível submeter novos pedidos.
+              </p>
+            )
           ) : protocolos.length > 0 ? (
             <p className="mt-3 inline-flex rounded-full bg-warning-container px-3 py-1.5 text-xs font-semibold text-on-warning-container">
               Selecione um protocolo no topo da página antes de submeter.
