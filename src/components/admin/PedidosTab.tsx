@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, FileText, X, ChevronRight } from "lucide-react";
+import { Loader2, Search, FileText, X, ChevronRight, Upload, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusChip } from "@/components/StatusChip";
@@ -14,6 +14,7 @@ import {
 type PedidoRow = {
   id: string;
   user_id: string;
+  protocolo_id: string | null;
   titulo_estudo: string;
   descricao: string;
   dados_pretendidos: string;
@@ -371,7 +372,174 @@ function PedidoDetailDrawer({
               </ol>
             )}
           </div>
+
+          <FicheirosFinaisAdmin pedidoId={pedido.id} protocoloId={pedido.protocolo_id} adminUserId={adminUserId} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+type FicheiroFinal = {
+  id: string;
+  filename: string;
+  storage_path: string;
+  size_bytes: number | null;
+  descricao: string | null;
+  uploaded_at: string;
+};
+
+function FicheirosFinaisAdmin({
+  pedidoId,
+  protocoloId,
+  adminUserId,
+}: {
+  pedidoId: string;
+  protocoloId: string | null;
+  adminUserId: string | undefined;
+}) {
+  const qc = useQueryClient();
+  const [files, setFiles] = useState<File[]>([]);
+  const [descricao, setDescricao] = useState("");
+
+  const ficheirosQ = useQuery({
+    queryKey: ["admin", "pedido-finais", pedidoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedido_ficheiros_finais")
+        .select("id, filename, storage_path, size_bytes, descricao, uploaded_at")
+        .eq("pedido_id", pedidoId)
+        .order("uploaded_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as FicheiroFinal[];
+    },
+  });
+
+  const uploadMut = useMutation({
+    mutationFn: async () => {
+      if (!files.length) throw new Error("Selecione pelo menos um ficheiro");
+      for (const f of files) {
+        if (f.size > 50 * 1024 * 1024) throw new Error(`"${f.name}" excede 50 MB`);
+        const safe = f.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${pedidoId}/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage
+          .from("trabalhos-finais")
+          .upload(path, f, { contentType: f.type || undefined });
+        if (upErr) throw upErr;
+        const { error: insErr } = await supabase.from("pedido_ficheiros_finais").insert({
+          pedido_id: pedidoId,
+          protocolo_id: protocoloId,
+          filename: f.name,
+          storage_path: path,
+          mime_type: f.type || null,
+          size_bytes: f.size,
+          descricao: descricao.trim() || null,
+          uploaded_by: adminUserId ?? null,
+        });
+        if (insErr) throw insErr;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Ficheiros enviados aos investigadores");
+      setFiles([]);
+      setDescricao("");
+      void qc.invalidateQueries({ queryKey: ["admin", "pedido-finais", pedidoId] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (f: FicheiroFinal) => {
+      await supabase.storage.from("trabalhos-finais").remove([f.storage_path]);
+      const { error } = await supabase.from("pedido_ficheiros_finais").delete().eq("id", f.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Ficheiro removido");
+      void qc.invalidateQueries({ queryKey: ["admin", "pedido-finais", pedidoId] });
+    },
+    onError: (e: Error) => toast.error("Falha", { description: e.message }),
+  });
+
+  const download = async (f: FicheiroFinal) => {
+    const { data, error } = await supabase.storage
+      .from("trabalhos-finais")
+      .createSignedUrl(f.storage_path, 60);
+    if (error || !data) {
+      toast.error("Falha ao gerar link");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className="rounded-2xl bg-surface-container-low p-5">
+      <p className="label-eyebrow">Ficheiros finais para o investigador</p>
+      <p className="mt-1 text-xs text-on-surface-variant">
+        Ficheiros validados enviados aos membros do protocolo. Ficam disponíveis para download na
+        área do investigador.
+      </p>
+
+      <div className="mt-4 space-y-2">
+        <input
+          type="file"
+          multiple
+          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          className="block text-xs text-on-surface file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-on-primary"
+        />
+        <input
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          placeholder="Descrição / nota (opcional)"
+          className="w-full rounded-lg bg-surface-container-lowest px-3 py-2 text-sm text-on-surface shadow-tonal-sm outline outline-2 outline-transparent focus:outline-primary"
+        />
+        <button
+          onClick={() => uploadMut.mutate()}
+          disabled={uploadMut.isPending || !files.length}
+          className="inline-flex items-center gap-1.5 rounded-md bg-gradient-primary px-3 py-1.5 text-xs font-semibold text-on-primary disabled:opacity-50"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          {uploadMut.isPending ? "A enviar…" : "Enviar ficheiros"}
+        </button>
+      </div>
+
+      <div className="mt-4">
+        {ficheirosQ.isLoading ? (
+          <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
+        ) : (ficheirosQ.data?.length ?? 0) === 0 ? (
+          <p className="py-3 text-center text-xs text-on-surface-variant">Sem ficheiros carregados.</p>
+        ) : (
+          <ul className="space-y-2">
+            {ficheirosQ.data!.map((f) => (
+              <li key={f.id} className="flex items-center gap-3 rounded-lg bg-surface-container-lowest p-3">
+                <FileText className="h-4 w-4 flex-none text-on-surface-variant" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-on-surface">{f.filename}</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {f.size_bytes ? (f.size_bytes / 1024 / 1024).toFixed(2) + " MB · " : ""}
+                    {new Date(f.uploaded_at).toLocaleDateString("pt-PT")}
+                    {f.descricao ? ` · ${f.descricao}` : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => download(f)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-variant hover:bg-surface-container-highest"
+                  title="Descarregar"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => { if (confirm("Remover este ficheiro?")) deleteMut.mutate(f); }}
+                  disabled={deleteMut.isPending}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-variant hover:bg-error-container hover:text-on-error-container disabled:opacity-50"
+                  title="Remover"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
