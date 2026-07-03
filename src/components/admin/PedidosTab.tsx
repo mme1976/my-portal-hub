@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, FileText, X, ChevronRight } from "lucide-react";
+import { Loader2, Search, FileText, X, ChevronRight, Upload, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusChip } from "@/components/StatusChip";
