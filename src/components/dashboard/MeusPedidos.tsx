@@ -160,6 +160,8 @@ function PedidoDetalhe({ pedidoId, finalidade }: { pedidoId: string; finalidade:
       <p className="label-eyebrow">Finalidade do estudo</p>
       <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">{finalidade}</p>
 
+      <FicheirosFinaisInvestigador pedidoId={pedidoId} />
+
       <p className="label-eyebrow mt-6">Histórico</p>
       <div className="mt-3">
         {histQ.isLoading ? (
@@ -189,6 +191,78 @@ function PedidoDetalhe({ pedidoId, finalidade }: { pedidoId: string; finalidade:
           </ol>
         )}
       </div>
+    </div>
+  );
+}
+
+type FicheiroFinal = {
+  id: string;
+  filename: string;
+  storage_path: string;
+  size_bytes: number | null;
+  descricao: string | null;
+  uploaded_at: string;
+};
+
+function FicheirosFinaisInvestigador({ pedidoId }: { pedidoId: string }) {
+  const q = useQuery({
+    queryKey: ["pedido-finais", pedidoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedido_ficheiros_finais")
+        .select("id, filename, storage_path, size_bytes, descricao, uploaded_at")
+        .eq("pedido_id", pedidoId)
+        .order("uploaded_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as FicheiroFinal[];
+    },
+  });
+
+  const download = async (f: FicheiroFinal) => {
+    const { data, error } = await supabase.storage
+      .from("trabalhos-finais")
+      .createSignedUrl(f.storage_path, 60);
+    if (error || !data) {
+      toast.error("Falha ao gerar link de download");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className="mt-5 rounded-xl bg-surface-container p-4">
+      <p className="label-eyebrow">Ficheiros finais disponibilizados pela DGEEC</p>
+      {q.isLoading ? (
+        <Loader2 className="mt-3 h-4 w-4 animate-spin text-primary" />
+      ) : (q.data ?? []).length === 0 ? (
+        <p className="mt-2 text-xs text-on-surface-variant">
+          Sem ficheiros disponibilizados. Serão enviados pela administração quando o pedido estiver
+          concluído.
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {(q.data ?? []).map((f) => (
+            <li key={f.id} className="flex items-center gap-3 rounded-lg bg-surface-container-lowest p-3">
+              <FileText className="h-4 w-4 flex-none text-on-surface-variant" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-on-surface">{f.filename}</p>
+                <p className="text-xs text-on-surface-variant">
+                  {f.size_bytes ? (f.size_bytes / 1024 / 1024).toFixed(2) + " MB · " : ""}
+                  {new Date(f.uploaded_at).toLocaleDateString("pt-PT")}
+                  {f.descricao ? ` · ${f.descricao}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => download(f)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Descarregar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
