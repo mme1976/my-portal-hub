@@ -14,6 +14,7 @@ import {
 type PedidoRow = {
   id: string;
   user_id: string;
+  protocolo_id: string | null;
   titulo_estudo: string;
   descricao: string;
   dados_pretendidos: string;
